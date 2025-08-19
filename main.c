@@ -29,6 +29,8 @@ typedef struct tile {
 //========================================//
 
 int AirRouteCost(Tile **map, int x, int y);
+int Incremento(Tile **map, int x, int y, int v, int raggio, int distanza);
+int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb);
 
 int main() {
 	char command[64];
@@ -67,10 +69,39 @@ int main() {
 				printf("OK\n");
 				break;
 			case 'change_cost':
-				int x, y, v, raggio;
+				int x, y, v, raggio, hColo, val;
 				res = scanf("%d" "%d" "%d" "%d", &x, &y, &v, &raggio);
-				if (x < row && x >= 0 && y < col && y >= 0 && raggio > 0) {
-
+				if (x < row && x >= 0 && y < col && y >= 0 && raggio > 0 && -10 <= v && v >= 10) {
+					hColo = 1;
+					//loop per le colonne da modificare (asse x)
+					for (int i = -raggio; i <= raggio; i++) {
+						//loop per le righe da modificare (asse y)
+						if ((x+i) >= 0 && (x+i) < col) { //solo se esiste la colonna, risparimo tempo
+							for (int j = -hColo; j <= hColo; j++) {
+								if ((y+j) >= 0 && (y+j) < row) { // solo se esiste la riga
+									val = Incremento(map, x+i, y+j, v, raggio, DistanzaEsagoni(map, x+i, y+j, x, y));
+									map[x+i][y+j].cost = val;
+									for (int k = 0; k < map[x+i][y+j].numAirRoute; k++) {
+										map[x+i][y+j].array[k].costAirRoute = val;
+									}
+								}
+							}
+						}
+						//gestione incremento altezza delle colonne
+						if (i <= (raggio/2)) {
+							if (hColo < (raggio - 1)) {
+								hColo = hColo + 2;
+							}else if (hColo < raggio){
+								hColo = hColo + 1;
+							}
+						}else {
+							if (hColo == raggio && raggio % 2 != 0) {
+								hColo = hColo - 1;
+							}else if (hColo > 0) {
+								hColo = hColo - 2;
+							}
+						}
+					}
 				}
 				else {
 					printf("KO\n");
@@ -141,4 +172,33 @@ int AirRouteCost(Tile **map, int x, int y) {
 	}
 	sum = (sum + map[x][y].cost) / (map[x][y].numAirRoute + 1);
 	return sum;
+}
+
+int Incremento(Tile **map, int x, int y, int v, int raggio, int distanza) {
+	int costo, temp;
+
+	temp = (raggio - distanza)/raggio;
+	costo = map[x][y].cost;
+
+	if (temp > 0) {
+		costo = costo + (v * temp);
+	}
+
+	return costo;
+}
+
+int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb) {
+	//visto che uso le cordinate cubiche la formula è veloce, ovvero il massimo tra le differenze dei 3 assi
+	int dx, dy, dz, max;
+	dx = abs(map[xa][ya].x - map[xb][yb].x), dy = abs(map[xa][ya].y - map[xb][yb].y), dz = abs(map[xa][ya].z - map[xb][yb].z);
+
+	max = dx;
+	if (dy > max) {
+		max = dy;
+	}
+	if (dz > max) {
+		max = dz;
+	}
+
+	return max;
 }
