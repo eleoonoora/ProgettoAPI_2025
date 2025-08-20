@@ -23,14 +23,29 @@ typedef struct tile {
 	int cost;
 	int numAirRoute;
 	AirRoute *array;
-	int routeAdded;
+	//int routeAdded;
 } Tile;
 
+//========================================//
+
+//================= HEAP =================//
+typedef struct heap {
+	int key;
+	int id;
+} Heap;
 //========================================//
 
 int AirRouteCost(Tile **map, int x, int y);
 int Incremento(Tile **map, int x, int y, int v, int raggio, int distanza);
 int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb);
+Heap ExtractMin (Heap *Q, int *HeapSize);
+void MinHeapify (Heap *Q, int HeapSize, int i);
+int Left(int i);
+int Right(int i);
+void Swap (Heap *a, Heap *b);
+void DecreaseKey (Heap *Q, int i, int key);
+int Parent(int i);
+void HeapInsert (Heap *Q, int *heapSize, int key);
 
 int main() {
 	char command[64];
@@ -80,9 +95,18 @@ int main() {
 							for (int j = -hColo; j <= hColo; j++) {
 								if ((y+j) >= 0 && (y+j) < row) { // solo se esiste la riga
 									val = Incremento(map, x+i, y+j, v, raggio, DistanzaEsagoni(map, x+i, y+j, x, y));
-									map[x+i][y+j].cost = val;
-									for (int k = 0; k < map[x+i][y+j].numAirRoute; k++) {
-										map[x+i][y+j].array[k].costAirRoute = val;
+									if (val > 0 && val <= 100) { //lo aggiorna solo se il nuovo costo (finale) è tra 0 e 100
+										map[x+i][y+j].cost = val;
+										for (int k = 0; k < map[x+i][y+j].numAirRoute; k++) {
+											map[x+i][y+j].array[k].costAirRoute = val;
+										}
+									}else {
+										if (val <= 0) { // se è negativo lo poni a zero
+											map[x+i][y+j].cost = 0;
+											for (int k = 0; k < map[x+i][y+j].numAirRoute; k++) {
+												map[x+i][y+j].array[k].costAirRoute = 0;
+											}
+										}
 									}
 								}
 							}
@@ -102,6 +126,7 @@ int main() {
 							}
 						}
 					}
+					printf("OK\n");
 				}
 				else {
 					printf("KO\n");
@@ -157,6 +182,27 @@ int main() {
 
 				break;
 			case 'travel_cost':
+				int xp, yp, xd, yd;
+				res = scanf("%d" "%d" "%d" "%d", &xp, &yp, &xd, &yd);
+
+				if (xp < 0 || yp < 0 || xd < 0 || yd < 0 || xp > row || yp > col || xd > row || yd > col) {
+					printf("KO\n");
+				}else {
+					if (map[xp][yp].cost == 0) {
+						printf("-1\n");
+					}
+					else if (xp == xd && yp == yd) {
+						printf("0\n");
+					}
+					else {
+						//dijkstra
+						Heap *heap[row*col];
+						int heapSize = 0;
+
+						//! manca da assegnare i nodi allo heap
+					}
+
+				}
 				break;
 			default:
 				printf("Wrong command.\n");
@@ -202,3 +248,80 @@ int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb) {
 
 	return max;
 }
+
+// Gestione dell'estrazione del valore minimo dell'heap (pop)
+Heap ExtractMin (Heap *Q, int *HeapSize) {
+	if (*HeapSize < 1) {
+		printf("error\n");
+	}
+	Heap min;
+	min = Q[1];
+	Q[1] = Q[*HeapSize];
+	(*HeapSize)--;
+	MinHeapify(Q, *HeapSize, 1);
+
+	return min;
+}
+
+void MinHeapify (Heap *Q, int HeapSize, int i) {
+	int l = Left(i);
+	int r = Right(i);
+	int max;
+
+	if (l <= HeapSize && Q[l].key > Q[i].key) {
+		max = l;
+	}
+	else {
+		if (r <= HeapSize && Q[r].key > Q[max].key) {
+			max = r;
+		}
+	}
+
+	if (max != i) {
+		Swap(&Q[i], &Q[max]);
+		MinHeapify(Q, HeapSize, max);
+	}
+}
+
+int Left(int i) {
+	return 2 * i;
+}
+
+int Right(int i) {
+	return 2 * i + 1;
+}
+
+void Swap (Heap *a, Heap *b) {
+	Heap temp;
+	temp = *a;
+	*a = *b;
+	*b = temp;
+}
+
+//gestione per "alzare" un nodo dopo una modifica
+void DecreaseKey (Heap *Q, int i, int key) {
+	if (key > Q[i].key) {
+		printf("new key greater than older\n");
+	}
+
+	Q[i].key = key;
+	while (i > 1 && Q[Parent(i)].key > Q[i].key ) {
+		Swap(&Q[i], &Q[Parent(i)]);
+		i = Parent(i);
+	}
+}
+
+int Parent(int i) {
+	return i / 2;
+}
+
+//Gestione dell'inserimento nello heap
+void HeapInsert (Heap *Q, int *heapSize, int key) {
+	(*heapSize) ++;
+	//uso -1 al posto di infinito perchè i pesi vanno da 0 a 100,usare un numero come 101 sarebbe errato perchè
+	//procedenndo con i passi potrei avere la somma maggiore. Ma mai negativa
+	Q[*heapSize].key = -1;
+	DecreaseKey(Q, *heapSize, key);
+}
+
+//! manca in codice effettivo dell'algoritmo di dijkstra
