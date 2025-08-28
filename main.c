@@ -32,24 +32,30 @@ typedef struct tile {
 //========================================//
 
 //================= HEAP =================//
-typedef struct heap {
+typedef struct node {
 	int distanza;
 	int indice;
-} Heap;
+} Node;
+
+typedef struct queue {
+	int size;
+	int *posizione;
+	Node *minHeap;
+} Queue;
 //========================================//
 
 int AirRouteCost(Tile **map, int x, int y);
 int Incremento(Tile **map, int x, int y, int v, int raggio, int distanza);
 int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb);
-Heap ExtractMin (Heap *Q, int *HeapSize);
-void MinHeapify (Heap *Q, int HeapSize, int i);
+Node ExtractMin (Queue *Q);
+void MinHeapify (Queue *Q, int i);
 int Left(int i);
 int Right(int i);
-void Swap (Heap *a, Heap *b);
-void DecreaseKey (Heap *Q, int i, int key);
+void Swap (Node *a, Node *b);
+void DecreaseKey (Queue *Q, int i, int key);
 int Parent(int i);
-void HeapInsert (Heap *Q, int *heapSize, int key);
-void DijkstraShortestPath(Tile **G, int w, int id, int col, int row);
+void HeapInsert (Queue *Q, int id, int key);
+void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row);
 
 int main() {
 	char command[64];
@@ -59,7 +65,7 @@ int main() {
 	while ((res = scanf("%s", command)) != EOF) {
 		if (strcmp(command, "init") == 0) {
 			//se la mappa è già presente la si libera
-			if (map != NULL) {
+			if (map != NULL) { //! non inizializza bene dopo il primo init
 				for (int i = 0; i < row; ++i) {
 					free(map[i]);
 				}
@@ -96,17 +102,17 @@ int main() {
 				if ((x+i) >= 0 && (x+i) < col) { //solo se esiste la colonna, risparimo tempo
 					for (int j = -hColo; j <= hColo; j++) {
 						if ((y+j) >= 0 && (y+j) < row) { // solo se esiste la riga
-							val = Incremento(map, x+i, y+j, v, raggio, DistanzaEsagoni(map, x+i, y+j, x, y));
+							val = Incremento(map,y+j, x+i, v, raggio, DistanzaEsagoni(map, y+j, x+i, x, y));
 							if (val > 0 && val <= 100) { //lo aggiorna solo se il nuovo costo (finale) è tra 0 e 100
-								map[x+i][y+j].cost = val;
-								for (int k = 0; k < map[x+i][y+j].numAirRoute; k++) {
-									map[x+i][y+j].array[k].costAirRoute = val;
+								map[y+j][x+i].cost = val;
+								for (int k = 0; k < map[y+j][x+i].numAirRoute; k++) {
+									map[y+j][x+i].array[k].costAirRoute = val;
 								}
 							}else {
 								if (val <= 0) { // se è negativo lo poni a zero
-									map[x+i][y+j].cost = 0;
-									for (int k = 0; k < map[x+i][y+j].numAirRoute; k++) {
-										map[x+i][y+j].array[k].costAirRoute = 0;
+									map[y+j][x+i].cost = 0;
+									for (int k = 0; k < map[y+j][x+i].numAirRoute; k++) {
+										map[y+j][x+i].array[k].costAirRoute = 0;
 									}
 								}
 							}
@@ -130,7 +136,7 @@ int main() {
 			}
 			printf("OK\n");
 		}
-		else if (raggio == 1) {
+		else if (x < row && x >= 0 && y < col && y >= 0 && raggio == 1 && -10 <= v && v <= 10) {
 			map[x][y].cost += v;
 			printf("OK\n");
 		}
@@ -143,7 +149,7 @@ int main() {
 		int x_start = 0, y_start = 0, x_end = 0, y_end = 0;
 		scanf("%d" "%d" "%d" "%d", &x_start, &y_start, &x_end, &y_end);
 
-		if (x_start <= row && x_end <= row && y_end <= col && y_end <= col) {
+		if (x_start < row && x_end < row && y_end < col && y_end < col) {
 			AirRoute *airRouteHead = map[x_start][y_start].array;
 			AirRoute *airRoutePrev = NULL;
 
@@ -190,7 +196,7 @@ int main() {
 		int xp, yp, xd, yd;
 		res = scanf("%d" "%d" "%d" "%d", &xp, &yp, &xd, &yd);
 
-		if (xp < 0 || yp < 0 || xd < 0 || yd < 0 || xp > row || yp > col || xd > row || yd > col) {
+		if (xp < 0 || yp < 0 || xd < 0 || yd < 0 || xp >= row || yp >= col || xd >= row || yd >= col) {
 			printf("-1\n");
 		}else {
 			if (map[xp][yp].cost == 0) {
@@ -201,7 +207,7 @@ int main() {
 			}
 			else {
 				//dijkstra
-				DijkstraShortestPath(map, map[xp][yp].cost, xd * col + yd, col, row);
+				DijkstraShortestPath(map, map[xp][yp].cost, xp * col + yp, xd * col + yd, col, row);
 			}
 
 		}
@@ -236,7 +242,9 @@ int Incremento(Tile **map, int x, int y, int v, int raggio, int distanza) {
 int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb) {
 	//visto che uso le cordinate cubiche la formula è veloce, ovvero il massimo tra le differenze dei 3 assi
 	int dx, dy, dz, max;
-	dx = abs(map[xa][ya].x - map[xb][yb].x), dy = abs(map[xa][ya].y - map[xb][yb].y), dz = abs(map[xa][ya].z - map[xb][yb].z);
+	dx = abs(map[xa][ya].x - map[xb][yb].x);
+	dy = abs(map[xa][ya].y - map[xb][yb].y);
+	dz = abs(map[xa][ya].z - map[xb][yb].z);
 
 	max = dx;
 	if (dy > max) {
@@ -249,36 +257,35 @@ int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb) {
 	return max;
 }
 
-// Gestione dell'estrazione del valore minimo dell'heap (pop)
-Heap ExtractMin (Heap *Q, int *HeapSize) {
-	if (*HeapSize > 0) {
-		Heap min;
-		min = Q[0];
-		Q[0] = Q[(*HeapSize) - 1];
-		(*HeapSize)--;
-		MinHeapify(Q, *HeapSize, 0);
+//Gestione dell'estrazione del valore minimo dell'heap (pop)
+Node ExtractMin (Queue *Q) {
+	if (Q->size > 0) {
+		Node min = Q->minHeap[0];
+		Q->minHeap[0] = Q->minHeap[( Q->size) - 1];
+		( Q->size)--;
+		MinHeapify(Q, 0);
 		return min;
 	}
 
 }
 
-void MinHeapify (Heap *Q, int HeapSize, int i) {
+void MinHeapify (Queue *Q, int i) {
 	int l = Left(i);
 	int r = Right(i);
 	int min = i;
 
-	if (l < HeapSize && Q[l].distanza < Q[i].distanza) {
+	if (l < Q->size && Q->minHeap[l].distanza < Q->minHeap[i].distanza) {
 		min = l;
 	}
 	else {
-		if (r < HeapSize && Q[r].distanza < Q[min].distanza) {
+		if (r < Q->size && Q->minHeap[r].distanza < Q->minHeap[min].distanza) {
 			min = r;
 		}
 	}
 
 	if (min != i) {
-		Swap(&Q[i], &Q[min]);
-		MinHeapify(Q, HeapSize, min);
+		Swap(&Q->minHeap[i], &Q->minHeap[min]);
+		MinHeapify(Q, min);
 	}
 }
 
@@ -290,19 +297,19 @@ int Right(int i) {
 	return 2 * i + 2;
 }
 
-void Swap (Heap *a, Heap *b) {
-	Heap temp;
+void Swap (Node *a, Node *b) {
+	Node temp;
 	temp = *a;
 	*a = *b;
 	*b = temp;
 }
 
 //gestione per "alzare" un nodo dopo una modifica
-void DecreaseKey (Heap *Q, int i, int key) {
-	if (key < Q[i].distanza) {
-		Q[i].distanza = key;
-		while (i > 0 && Q[Parent(i)].distanza > Q[i].distanza ) {
-			Swap(&Q[i], &Q[Parent(i)]);
+void DecreaseKey (Queue *Q, int i, int key) {
+	if (key < Q->minHeap[i].distanza) {
+		Q->minHeap[i].distanza = key;
+		while (i > 0 && Q->minHeap[Parent(i)].distanza > Q->minHeap[i].distanza ) {
+			Swap(&Q->minHeap[i], &Q->minHeap[Parent(i)]);
 			i = Parent(i);
 		}
 	}
@@ -313,134 +320,138 @@ int Parent(int i) {
 }
 
 //Gestione dell'inserimento nello heap
-void HeapInsert (Heap *Q, int *heapSize, int key) {
-	//uso -1 al posto di infinito perchè i pesi vanno da 0 a 100,usare un numero come 101 sarebbe errato perchè
-	//procedenndo con i passi potrei avere la somma maggiore. Ma mai negativa
-	Q[*heapSize].distanza = key;
-	(*heapSize) ++;
-	DecreaseKey(Q, *heapSize, key);
+void HeapInsert (Queue *Q, int id, int key) {
+	Q->minHeap[Q->size].distanza = key;
+	Q->minHeap[Q->size].indice = id;
+	Q->size += 1;
+	DecreaseKey(Q, Q->size,key);
 }
 
-void DijkstraShortestPath(Tile **G, int w, int id, int col, int row) {
-	int heapSize = 0, distance[row][col];
-	Heap Q[row*col];
-	Heap s;
-	s.indice = id;
-	s.distanza = 0;
+void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
+	int distance[row*col];
+	Queue *Q = malloc(sizeof(Queue));
+	Q->minHeap = malloc(sizeof(Node) * (row*col));
+	Q->size = 0;
+	Q->posizione = malloc(sizeof(int) * (row*col));
 
-	HeapInsert (&Q, &heapSize, s.distanza);
+	distance[idp] = 0;
+	HeapInsert (Q, idp,0);
+	Q->posizione[idp] = idp;
 
 	for (int i = 0; i < row; i++) {
 		for (int j = 0; j < col; j++) {
-			if ((i*col)+j != s.indice) {
-				Q[heapSize].distanza = INF;
-				Q[heapSize].indice = i * col + j;
-				HeapInsert (&Q, &heapSize, Q[heapSize].distanza);
+			if ((i*col)+j != idp) {
+				Q->posizione[(i*col)+j] = (i*col)+j;
+				distance[(i*col)+j] = INF;
+				HeapInsert (Q, (i*col)+j, INF);
 			}
 		}
 	}
 
-	//! Qui c'è il problema, non è gestitto correttamente l'heap e il salvataggio delle distanze
-	//In pratica provo ad accedere ad un nodo dello heap con l'id ma la posizione dei nodi cambia ad ogni inserimento/rimozione!
-	//Bisognerebbe guardare (e quindi passare) la matrice delle distanze per questo
-	while (heapSize > 0) {
-		Heap u;
-		u = ExtractMin (Q, &heapSize);
+	while (Q->size > 0) {
+		Node u;
+		u = ExtractMin (Q); //! Va rivisto come estrai il minore perchè dopo un paio di esecuzioni, dalla cella 0 0, quella a distanza due risulta la 99 98....
 		int x = u.indice / col;
 		int y = u.indice % col;
 
-		int xp, yp, zp;
-		xp = y - ((x - (x & 1)) / 2);
-		zp = x;
-		yp = xp- zp;
+		if (G[x][y].cost != 0) {
+			int xp, yp, zp;
+			xp = y - ((x - (x & 1)) / 2);
+			zp = x;
+			yp = xp - zp;
 
-		int xd, yd, zd, idFinale;
+			int xd, yd, zd, idFinale;
 
-		//1 0 -1
-		xd = xp + 1;
-		yd = yp;
-		zd = zp - 1;
-		idFinale = (xd * col) + (zp -(zp & 1)) /2;
-		if (idFinale >=0 && idFinale < row*col && Q[idFinale].distanza > u.distanza + w) {
-			Q[idFinale].distanza = u.distanza + w;
-			distance[zd][(xp -(zp & 1)) /2] = u.distanza + w;
-			DecreaseKey (&Q, idFinale, Q[idFinale].distanza);
-		}
+			//1 0 -1 (alto destra)
+			xd = xp + 1;
+			yd = yp;
+			zd = zp - 1;
+			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
+			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && x > 0 && y < (col - 1)) {
+				distance[idFinale] = u.distanza + w;
+				DecreaseKey (Q, idFinale, distance[idFinale]);
+			}
 
-		//1 -1 0
-		xd = xp + 1;
-		yd = yp -1;
-		zd = zp;
-		idFinale = (zd * col) + xp + (zp -(zp & 1)) /2;
-		if (idFinale >=0 && idFinale < row*col && Q[idFinale].distanza > u.distanza + w) {
-			Q[idFinale].distanza = u.distanza + w;
-			distance[zd][xp + (zp -(zp & 1)) /2] = u.distanza + w;
-			DecreaseKey (&Q, idFinale, Q[idFinale].distanza);
-		}
+			//1 -1 0 (destra)
+			xd = xp + 1;
+			yd = yp -1;
+			zd = zp;
+			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
+			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && y < (col - 1)) {
+				distance[idFinale] = u.distanza + w;
+				DecreaseKey (Q, idFinale, distance[idFinale]);
+			}
 
-		//0 -1 1
-		xd = xp;
-		yd = yp - 1;
-		zd = zp + 1;
-		idFinale = (zd * col) + xp + (zp -(zp & 1)) /2;
-		if (idFinale >=0 && idFinale < row*col && Q[idFinale].distanza > u.distanza + w) {
-			Q[idFinale].distanza = u.distanza + w;
-			distance[zd][xp + (zp -(zp & 1)) /2] = u.distanza + w;
+			//0 -1 1 (basso destra)
+			xd = xp;
+			yd = yp - 1;
+			zd = zp + 1;
+			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
+			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && x < (row - 1) && y < (col - 1)) {
+				distance[idFinale] = u.distanza + w;
+				DecreaseKey (Q, idFinale, distance[idFinale]);
+			}
 
-			
-			DecreaseKey (&Q, idFinale, Q[idFinale].distanza);
-		}
+			//-1 0 1 (basso sinistra)
+			xd = xp - 1;
+			yd = yp;
+			zd = zp + 1;
+			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
+			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && x < (row - 1) && y > 0) {
+				distance[idFinale] = u.distanza + w;
+				DecreaseKey (Q, idFinale, distance[idFinale]);
+			}
 
-		//-1 0 1
-		xd = xp - 1;
-		yd = yp;
-		zd = zp + 1;
-		idFinale = (zd * col) + xp + (zp -(zp & 1)) /2;
-		if (idFinale >=0 && idFinale < row*col && Q[idFinale].distanza > u.distanza + w) {
-			Q[idFinale].distanza = u.distanza + w;
-			distance[zd][xp + (zp -(zp & 1)) /2] = u.distanza + w;
-			DecreaseKey (&Q, idFinale, Q[idFinale].distanza);
-		}
+			//-1 1 0 (sinistra)
+			xd = xp - 1;
+			yd = yp + 1;
+			zd = zp;
+			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
+			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && y > 0) {
+				distance[idFinale] = u.distanza + w;
+				DecreaseKey (Q, idFinale, distance[idFinale]);
+			}
 
-		//-1 1 0
-		xd = xp - 1;
-		yd = yp + 1;
-		zd = zp;
-		idFinale = (zd * col) + xp + (zp -(zp & 1)) /2;
-		if (idFinale >=0 && idFinale < row*col && Q[idFinale].distanza > u.distanza + w) {
-			Q[idFinale].distanza = u.distanza + w;
-			distance[zd][xp + (zp -(zp & 1)) /2] = u.distanza + w;
-			DecreaseKey (&Q, idFinale, Q[idFinale].distanza);
-		}
+			//0 1 -1 (alto sinistra)
+			xd = xp;
+			yd = yp + 1;
+			zd = zp - 1;
+			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
+			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && x > 0 && y > 0) {
+				distance[idFinale] = u.distanza + w;
+				DecreaseKey (Q, idFinale, distance[idFinale]);
+			}
 
-		//0 1 -1
-		xd = xp;
-		yd = yp + 1;
-		zd = zp - 1;
-		idFinale = (zd * col) + xp + (zp -(zp & 1)) /2;
-		if (idFinale >=0 && idFinale < row*col && Q[idFinale].distanza > u.distanza + w) {
-			Q[idFinale].distanza = u.distanza + w;
-			distance[zd][xp + (zp -(zp & 1)) /2] = u.distanza + w;
-			DecreaseKey (&Q, idFinale, Q[idFinale].distanza);
-		}
-
-		//air route
-		for (int i = 0; i < G[x][y].numAirRoute; i++) {
-			idFinale = G[x][y].array->xDest * col + G[x][y].array->yDest;
-			if (idFinale >=0 && idFinale < row*col && Q[idFinale].distanza > u.distanza + w) {
-				Q[idFinale].distanza = u.distanza + w;
-				distance[zd][xp + (zp -(zp & 1)) /2] = u.distanza + w;
-				DecreaseKey (&Q, idFinale, Q[idFinale].distanza);
+			//air route
+			for (int i = 0; i < G[x][y].numAirRoute; i++) {
+				idFinale = G[x][y].array->xDest * col + G[x][y].array->yDest;
+				if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w) {
+					distance[idFinale] = u.distanza + w;
+					DecreaseKey (Q, idFinale, distance[idFinale]);
+				}
 			}
 		}
 
-	}
+		// for (int i = 0; i < col; i++) {
+		// 	for (int j = 0; j < row; j++) {
+		// 		if (distance[i*col+j] < INF) {
+		// 			printf("%d	", distance[i*col+j]);
+		// 		}
+		// 		else {
+		// 			printf("INF	");
+		// 		}
+		// 	}
+		// 	printf("\n");
+		// }
+		//
+		// printf("\n\n");
 
-	if (distance[id/col][id%col] >= INF) {
+	}
+	if (distance[idd] >= INF) {
 		printf("-1\n");
 	}
 	else {
-		printf("%d\n", distance[id/col][id%col]);
+		printf("%d\n", distance[idd]);
 	}
 
 }
