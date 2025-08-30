@@ -47,8 +47,8 @@ typedef struct queue {
 int AirRouteCost(Tile **map, int x, int y);
 int Incremento(Tile **map, int x, int y, int v, int raggio, int distanza);
 int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb);
-Node ExtractMin (Queue *Q);
-void MinHeapify (Queue *Q, int i);
+Node ExtractMin (Queue *Q, int *distanza);
+void MinHeapify (Queue *Q, int i, int *distanza);
 int Left(int i);
 int Right(int i);
 void Swap (Node *a, Node *b);
@@ -91,7 +91,7 @@ int main() {
 			}
 			printf("OK\n");
 		}
-	else if (strcmp(command, "change_cost") == 0) { //! controlla perchè raggio 1 è solo la cella inserita
+	else if (strcmp(command, "change_cost") == 0) {
 		int x, y, v, raggio, hColo, val;
 		scanf("%d" "%d" "%d" "%d", &x, &y, &v, &raggio);
 		if (x < row && x >= 0 && y < col && y >= 0 && raggio > 1 && -10 <= v && v <= 10) {
@@ -258,34 +258,34 @@ int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb) {
 }
 
 //Gestione dell'estrazione del valore minimo dell'heap (pop)
-Node ExtractMin (Queue *Q) {
+Node ExtractMin (Queue *Q, int *distanza) {
 	if (Q->size > 0) {
 		Node min = Q->minHeap[0];
 		Q->minHeap[0] = Q->minHeap[( Q->size) - 1];
 		( Q->size)--;
-		MinHeapify(Q, 0);
+		MinHeapify(Q, 0, distanza);
 		return min;
 	}
 
 }
 
-void MinHeapify (Queue *Q, int i) {
+void MinHeapify (Queue *Q, int i, int *distanza) {
 	int l = Left(i);
 	int r = Right(i);
 	int min = i;
 
-	if (l < Q->size && Q->minHeap[l].distanza < Q->minHeap[i].distanza) {
+	if (l < Q->size && distanza[Q->minHeap[l].indice] < distanza[Q->minHeap[min].indice]) {
 		min = l;
 	}
 	else {
-		if (r < Q->size && Q->minHeap[r].distanza < Q->minHeap[min].distanza) {
+		if (r < Q->size &&distanza[Q->minHeap[r].indice] < distanza[Q->minHeap[min].indice]) {
 			min = r;
 		}
 	}
 
 	if (min != i) {
 		Swap(&Q->minHeap[i], &Q->minHeap[min]);
-		MinHeapify(Q, min);
+		MinHeapify(Q, min, distanza);
 	}
 }
 
@@ -309,6 +309,10 @@ void DecreaseKey (Queue *Q, int i, int key) {
 	if (key < Q->minHeap[i].distanza) {
 		Q->minHeap[i].distanza = key;
 		while (i > 0 && Q->minHeap[Parent(i)].distanza > Q->minHeap[i].distanza ) {
+			int tmp;
+			tmp = Q->posizione[i];
+			Q->posizione[i] = Q->posizione[Parent(i)];
+			Q->posizione[Parent(i)] = tmp;
 			Swap(&Q->minHeap[i], &Q->minHeap[Parent(i)]);
 			i = Parent(i);
 		}
@@ -350,7 +354,7 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 
 	while (Q->size > 0) {
 		Node u;
-		u = ExtractMin (Q); //! Va rivisto come estrai il minore perchè dopo un paio di esecuzioni, dalla cella 0 0, quella a distanza due risulta la 99 98....
+		u = ExtractMin (Q, distance);
 		int x = u.indice / col;
 		int y = u.indice % col;
 
@@ -369,7 +373,7 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && x > 0 && y < (col - 1)) {
 				distance[idFinale] = u.distanza + w;
-				DecreaseKey (Q, idFinale, distance[idFinale]);
+				DecreaseKey (Q, Q->posizione[idFinale], distance[idFinale]);
 			}
 
 			//1 -1 0 (destra)
@@ -379,7 +383,7 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && y < (col - 1)) {
 				distance[idFinale] = u.distanza + w;
-				DecreaseKey (Q, idFinale, distance[idFinale]);
+				DecreaseKey (Q, Q->posizione[idFinale], distance[idFinale]);
 			}
 
 			//0 -1 1 (basso destra)
@@ -389,7 +393,7 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && x < (row - 1) && y < (col - 1)) {
 				distance[idFinale] = u.distanza + w;
-				DecreaseKey (Q, idFinale, distance[idFinale]);
+				DecreaseKey (Q, Q->posizione[idFinale], distance[idFinale]);
 			}
 
 			//-1 0 1 (basso sinistra)
@@ -399,7 +403,7 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && x < (row - 1) && y > 0) {
 				distance[idFinale] = u.distanza + w;
-				DecreaseKey (Q, idFinale, distance[idFinale]);
+				DecreaseKey (Q, Q->posizione[idFinale], distance[idFinale]);
 			}
 
 			//-1 1 0 (sinistra)
@@ -409,7 +413,7 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && y > 0) {
 				distance[idFinale] = u.distanza + w;
-				DecreaseKey (Q, idFinale, distance[idFinale]);
+				DecreaseKey (Q, Q->posizione[idFinale], distance[idFinale]);
 			}
 
 			//0 1 -1 (alto sinistra)
@@ -419,7 +423,7 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w && x > 0 && y > 0) {
 				distance[idFinale] = u.distanza + w;
-				DecreaseKey (Q, idFinale, distance[idFinale]);
+				DecreaseKey (Q, Q->posizione[idFinale], distance[idFinale]);
 			}
 
 			//air route
@@ -427,26 +431,40 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 				idFinale = G[x][y].array->xDest * col + G[x][y].array->yDest;
 				if (idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w) {
 					distance[idFinale] = u.distanza + w;
-					DecreaseKey (Q, idFinale, distance[idFinale]);
+					DecreaseKey (Q, Q->posizione[idFinale], distance[idFinale]);
 				}
 			}
 		}
 
-		// for (int i = 0; i < col; i++) {
-		// 	for (int j = 0; j < row; j++) {
-		// 		if (distance[i*col+j] < INF) {
-		// 			printf("%d	", distance[i*col+j]);
-		// 		}
-		// 		else {
-		// 			printf("INF	");
-		// 		}
-		// 	}
-		// 	printf("\n");
-		// }
-		//
-		// printf("\n\n");
+		for (int i = 0; i < col; i++) {
+			for (int j = 0; j < row; j++) {
+				if (distance[i*col+j] < INF) {
+					printf("%d	", distance[i*col+j]);
+				}
+				else {
+					printf("INF	");
+				}
+			}
+			printf("\n");
+		}
+
+		printf("\n\n");
 
 	}
+
+	for (int i = 0; i < col; i++) {
+		for (int j = 0; j < row; j++) {
+			if (distance[i*col+j] < INF) {
+				printf("%d	", distance[i*col+j]);
+			}
+			else {
+				printf("INF	");
+			}
+		}
+		printf("\n");
+	}
+
+	printf("\n\n");
 	if (distance[idd] >= INF) {
 		printf("-1\n");
 	}
