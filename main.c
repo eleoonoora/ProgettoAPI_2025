@@ -155,7 +155,7 @@ int main() {
 	else if (strcmp(command, "toggle_air_route") == 0) {
 		int flag = 0; //flag per la ricerca della rotta da inserire
 		int x_start = 0, y_start = 0, x_end = 0, y_end = 0;
-		scanf("%d" "%d" "%d" "%d", &x_start, &y_start, &x_end, &y_end);
+		res = scanf("%d" "%d" "%d" "%d", &x_start, &y_start, &x_end, &y_end);
 
 		if (x_start < row && x_end < row && y_end < col && y_end < col) {
 			AirRoute *airRouteHead = map[x_start][y_start].array;
@@ -272,14 +272,12 @@ int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb) {
 
 //Gestione dell'estrazione del valore minimo dell'heap (pop)
 Node ExtractMin (Queue *Q, int *distanza) {
-	if (Q->size > 0) {
 		Node min = Q->minHeap[0];
 		Q->minHeap[0] = Q->minHeap[( Q->size) - 1];
 		Q->posizione[Q->minHeap[0].indice] = 0;
 		( Q->size)--;
 		MinHeapify(Q, 0, distanza);
 		return min;
-	}
 
 }
 
@@ -380,10 +378,9 @@ void DijkstraShortestPath(Tile **G, int idp, int idd, int col, int row) {
 		int w = G[x][y].cost;
 
 		if (G[x][y].cost != 0) {
-			int xp, yp, zp;
+			int xp, zp;
 			xp = y - ((x - (x & 1)) / 2);
 			zp = x;
-			yp = -xp - zp;
 
 			int xd, zd, idFinale;
 
