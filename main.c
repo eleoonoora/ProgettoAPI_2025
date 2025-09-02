@@ -4,6 +4,8 @@
 
 #define INF 10000
 
+int counter = 0;
+
 /*
  *	Struttura delle tile: per ogni esagono della mappa vengono salvate le cordinate delle x, delle y, il costo di
  *	transito e una lista concatenata per gestire le rotte aeree.
@@ -55,7 +57,7 @@ void Swap (Queue *Q, int i, int j);
 void DecreaseKey (Queue *Q, int i, int key);
 int Parent(int i);
 void HeapInsert (Queue *Q, int id, int key);
-void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row);
+void DijkstraShortestPath(Tile **G, int idp, int idd, int col, int row);
 
 int main() {
 	char command[64];
@@ -63,6 +65,7 @@ int main() {
 	Tile **map = NULL;
 
 	while ((res = scanf("%s", command)) != EOF) {
+		counter++;
 		if (strcmp(command, "init") == 0) {
 			//se la mappa è già presente la si libera
 			if (map != NULL) { //! non inizializza bene dopo il primo init
@@ -102,17 +105,22 @@ int main() {
 				if ((x+i) >= 0 && (x+i) < col) { //solo se esiste la colonna, risparimo tempo
 					for (int j = -hColo; j <= hColo; j++) {
 						if ((y+j) >= 0 && (y+j) < row) { // solo se esiste la riga
-							val = Incremento(map,y+j, x+i, v, raggio, DistanzaEsagoni(map, y+j, x+i, x, y));
+							val = Incremento(map, x+i, y+j, v, raggio, DistanzaEsagoni(map, x, y, x+i, y+j));
 							if (val > 0 && val <= 100) { //lo aggiorna solo se il nuovo costo (finale) è tra 0 e 100
-								map[y+j][x+i].cost = val;
-								for (int k = 0; k < map[y+j][x+i].numAirRoute; k++) {
-									map[y+j][x+i].array[k].costAirRoute = val;
+								map[x+i][y+j].cost = val;
+								for (int k = 0; k < map[x+i][y+j].numAirRoute; k++) {
+									map[x+i][y+j].array[k].costAirRoute = val;
 								}
 							}else {
 								if (val <= 0) { // se è negativo lo poni a zero
-									map[y+j][x+i].cost = 0;
-									for (int k = 0; k < map[y+j][x+i].numAirRoute; k++) {
-										map[y+j][x+i].array[k].costAirRoute = 0;
+									map[x+i][y+j].cost = 0;
+									for (int k = 0; k <map[x+i][y+j].numAirRoute; k++) {
+										map[x+i][y+j].array[k].costAirRoute = 0;
+									}
+								}else {
+									map[x+i][y+j].cost = 100;
+									for (int k = 0; k < map[x+i][y+j].numAirRoute; k++) {
+										map[x+i][y+j].array[k].costAirRoute = 100;
 									}
 								}
 							}
@@ -199,6 +207,16 @@ int main() {
 		if (xp < 0 || yp < 0 || xd < 0 || yd < 0 || xp >= row || yp >= col || xd >= row || yd >= col) {
 			printf("-1\n");
 		}else {
+			// printf("la cella di partenza costa: %d\n", map[xp][yp].cost);
+			// for (int i = 0; i < row; i++) {
+			// 	for (int j = 0; j < col; j++) {
+			// 		printf("%d ", map[i][j].cost);
+			// 	}
+			// 	printf("\n");
+			// }
+			//
+			// printf("\n\n");
+
 			if (map[xp][yp].cost == 0) {
 				printf("-1\n");
 			}
@@ -207,7 +225,7 @@ int main() {
 			}
 			else {
 				//dijkstra
-				DijkstraShortestPath(map, map[xp][yp].cost, xp * col + yp, xd * col + yd, col, row);
+				DijkstraShortestPath(map, xp * col + yp, xd * col + yd, col, row);
 			}
 
 		}
@@ -227,34 +245,29 @@ int AirRouteCost(Tile **map, int x, int y) {
 }
 
 int Incremento(Tile **map, int x, int y, int v, int raggio, int distanza) {
-	int costo, temp;
+	int costo;
+	float temp;
 
-	temp = (raggio - distanza)/raggio;
+	temp = (float)(raggio - distanza)/(float)raggio;
 	costo = map[x][y].cost;
 
 	if (temp > 0) {
-		costo = costo + (v * temp);
+		costo = costo + (int) (v * temp);
 	}
 
 	return costo;
 }
 
 int DistanzaEsagoni (Tile** map, int xa, int ya, int xb, int yb) {
-	//visto che uso le cordinate cubiche la formula è veloce, ovvero il massimo tra le differenze dei 3 assi
-	int dx, dy, dz, max;
+	//visto che uso le cordinate cubiche la formula è veloce
+	int dx, dy, dz, val;
 	dx = abs(map[xa][ya].x - map[xb][yb].x);
 	dy = abs(map[xa][ya].y - map[xb][yb].y);
 	dz = abs(map[xa][ya].z - map[xb][yb].z);
 
-	max = dx;
-	if (dy > max) {
-		max = dy;
-	}
-	if (dz > max) {
-		max = dz;
-	}
+	val = (dx + dy + dz)/2;
 
-	return max;
+	return val;
 }
 
 //Gestione dell'estrazione del valore minimo dell'heap (pop)
@@ -262,6 +275,7 @@ Node ExtractMin (Queue *Q, int *distanza) {
 	if (Q->size > 0) {
 		Node min = Q->minHeap[0];
 		Q->minHeap[0] = Q->minHeap[( Q->size) - 1];
+		Q->posizione[Q->minHeap[0].indice] = 0;
 		( Q->size)--;
 		MinHeapify(Q, 0, distanza);
 		return min;
@@ -277,10 +291,9 @@ void MinHeapify (Queue *Q, int i, int *distanza) {
 	if (l < Q->size && Q->minHeap[l].distanza < Q->minHeap[min].distanza) {
 		min = l;
 	}
-	else {
-		if (r < Q->size && Q->minHeap[r].distanza < Q->minHeap[min].distanza) {
-			min = r;
-		}
+
+	if (r < Q->size && Q->minHeap[r].distanza < Q->minHeap[min].distanza) {
+		min = r;
 	}
 
 	if (min != i) {
@@ -303,15 +316,15 @@ void Swap (Queue *Q, int i, int j) {
 	Q->minHeap[i] = Q->minHeap[j];
 	Q->minHeap[j] = temp;
 
-	Q->posizione[Q->minHeap[i].indice] = j;
-	Q->posizione[Q->minHeap[j].indice] = i;
+	Q->posizione[Q->minHeap[i].indice] = i;
+	Q->posizione[Q->minHeap[j].indice] = j;
 
-	printf("Scambio %d con %d:\n", i, j);
-	printf("0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	24	25	26	27	28	29\n");
-	for (int k=0; k<30; k++) {
-		printf("%d	", Q->posizione[k]);
-	}
-	printf("\n\n");
+	// printf("Scambio %d con %d:\n", i, j);
+	// printf("0	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	24	25	26	27	28	29\n");
+	// for (int k=0; k<30; k++) {
+	// 	printf("%d	", Q->posizione[k]);
+	// }
+	// printf("\n\n");
 }
 
 //gestione per "alzare" un nodo dopo una modifica
@@ -333,11 +346,12 @@ int Parent(int i) {
 void HeapInsert (Queue *Q, int id, int key) {
 	Q->minHeap[Q->size].distanza = key;
 	Q->minHeap[Q->size].indice = id;
-	Q->size += 1;
 	DecreaseKey(Q, Q->size,key);
+
+	Q->size += 1;
 }
 
-void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
+void DijkstraShortestPath(Tile **G, int idp, int idd, int col, int row) {
 	int distance[row*col];
 	Queue *Q = malloc(sizeof(Queue));
 	Q->minHeap = malloc(sizeof(Node) * (row*col));
@@ -363,6 +377,7 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 		u = ExtractMin (Q, distance);
 		int x = u.indice / col;
 		int y = u.indice % col;
+		int w = G[x][y].cost;
 
 		if (G[x][y].cost != 0) {
 			int xp, yp, zp;
@@ -442,20 +457,21 @@ void DijkstraShortestPath(Tile **G, int w, int idp, int idd, int col, int row) {
 			}
 		}
 
-		for (int i = 0; i < row; i++) {
-			for (int j = 0; j < col; j++) {
-				if (distance[i*col+j] < INF) {
-					printf("%d	", distance[i*col+j]);
-				}
-				else {
-					printf("INF	");
-				}
-			}
-			printf("\n");
-		}
-
-		printf("\n\n");
-
+		// if (counter == 6) {
+		// 	for (int i = 0; i < row; i++) {
+		// 		for (int j = 0; j < col; j++) {
+		// 			if (distance[i*col+j] < INF) {
+		// 				printf("%d	", distance[i*col+j]);
+		// 			}
+		// 			else {
+		// 				printf("INF	");
+		// 			}
+		// 		}
+		// 		printf("\n");
+		// 	}
+		//
+		// 	printf("\n\n");
+		// }
 	}
 
 	if (distance[idd] >= INF) {
