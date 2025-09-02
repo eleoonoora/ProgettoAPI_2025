@@ -77,8 +77,8 @@ int main() {
 			}
 
 			//poi si procede nella lettura dei valori e alla crazione di una nuova mappa
-			scanf("%d", &col);
-			scanf("%d", &row);
+			res = scanf("%d", &col);
+			res = scanf("%d", &row);
 
 			map = malloc(row * sizeof(Tile *));
 			for (int i = 0; i < row; i++) {
@@ -96,7 +96,7 @@ int main() {
 		}
 	else if (strcmp(command, "change_cost") == 0) {
 		int x, y, v, raggio, hColo, val;
-		scanf("%d" "%d" "%d" "%d", &x, &y, &v, &raggio);
+		res = scanf("%d" "%d" "%d" "%d", &x, &y, &v, &raggio);
 		if (x < row && x >= 0 && y < col && y >= 0 && raggio > 1 && -10 <= v && v <= 10) {
 			hColo = 1;
 			//loop per le colonne da modificare (asse x)
@@ -385,11 +385,10 @@ void DijkstraShortestPath(Tile **G, int idp, int idd, int col, int row) {
 			zp = x;
 			yp = -xp - zp;
 
-			int xd, yd, zd, idFinale;
+			int xd, zd, idFinale;
 
 			//1 0 -1 (alto destra)
 			xd = xp + 1;
-			yd = yp;
 			zd = zp - 1;
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (x > 0 && (xd + (zd -(zd & 1))) < col && idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w) {
@@ -399,7 +398,6 @@ void DijkstraShortestPath(Tile **G, int idp, int idd, int col, int row) {
 
 			//1 -1 0 (destra)
 			xd = xp + 1;
-			yd = yp -1;
 			zd = zp;
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (y < (col - 1) && idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w) {
@@ -409,7 +407,6 @@ void DijkstraShortestPath(Tile **G, int idp, int idd, int col, int row) {
 
 			//0 -1 1 (basso destra)
 			xd = xp;
-			yd = yp - 1;
 			zd = zp + 1;
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (x < (row -1) && (xd + (zd -(zd & 1))) < col && idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w) {
@@ -419,7 +416,6 @@ void DijkstraShortestPath(Tile **G, int idp, int idd, int col, int row) {
 
 			//-1 0 1 (basso sinistra)
 			xd = xp - 1;
-			yd = yp;
 			zd = zp + 1;
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (x < (row -1) && (xd + (zd -(zd & 1))) > 0 && idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w) {
@@ -429,7 +425,6 @@ void DijkstraShortestPath(Tile **G, int idp, int idd, int col, int row) {
 
 			//-1 1 0 (sinistra)
 			xd = xp - 1;
-			yd = yp + 1;
 			zd = zp;
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (y > 0 && idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w) {
@@ -439,7 +434,6 @@ void DijkstraShortestPath(Tile **G, int idp, int idd, int col, int row) {
 
 			//0 1 -1 (alto sinistra = alto sinistra in matrice)
 			xd = xp;
-			yd = yp + 1;
 			zd = zp - 1;
 			idFinale = (zd * col) + xd + (zd -(zd & 1)) /2;
 			if (x > 0 && (xd + (zd -(zd & 1))) > 0 && idFinale >=0 && idFinale < row*col && distance[idFinale] > u.distanza + w) {
