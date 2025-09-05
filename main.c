@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define INF 2000000000
 
@@ -154,7 +155,25 @@ int32_t main() {
 			printf("OK\n");
 		}
 		else if (rowStart < row && rowStart >= 0 && colStart < col && colStart >= 0 && raggio == 1 && -10 <= v && v <= 10) {
-			map[rowStart][colStart].cost += v;
+			val = map[rowStart][colStart].cost + v;
+			if (val > 0 && val <= 100) {
+				map[rowStart][colStart].cost = val;
+				for (int32_t k = 0; k < map[rowStart][colStart].numAirRoute; k++) {
+					map[rowStart][colStart].array[k].costAirRoute = v;
+				}
+			} else {
+				if (val <= 0) { // se è negativo lo poni a zero
+					map[rowStart][colStart].cost = 0;
+					for (int32_t k = 0; k <map[rowStart][colStart].numAirRoute; k++) {
+						map[rowStart][colStart].array[k].costAirRoute = 0;
+					}
+				}else {
+					map[rowStart][colStart].cost = 100;
+					for (int32_t k = 0; k < map[rowStart][colStart].numAirRoute; k++) {
+						map[rowStart][colStart].array[k].costAirRoute = 100;
+					}
+				}
+			}
 			printf("OK\n");
 		}
 		else {
@@ -309,7 +328,7 @@ int32_t Incremento(Tile **map, int32_t col, int32_t row, int32_t v, int32_t ragg
 	costo = map[row][col].cost;
 
 	if (temp > 0) {
-		costo = costo + (int32_t) (v * temp);
+		costo = costo + (int32_t) floor(v * temp);
 	}
 
 	return costo;
