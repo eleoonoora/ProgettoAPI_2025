@@ -447,17 +447,15 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 		int32_t w = G[y][x].cost;
 
 		if (G[y][x].cost != 0) {
-			int32_t xp, yp, zp;
+			int32_t xp, zp;
 			xp = x - (y - (y & 1))/2;
 			zp = y;
-			yp = - xp - zp;
 
-			int32_t xd, yd, zd, idFinale, col_finale, row_finale;
+			int32_t xd, zd, idFinale, col_finale, row_finale;
 
 			//1 0 -1 (alto destra)
 			xd = xp + 1;
 			zd = zp - 1;
-			yd = -xd - zd;
 			row_finale = zd;
 			col_finale = xd + (zd -(zd & 1))/2;
 			idFinale = row_finale*col+col_finale;
@@ -469,7 +467,6 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			//1 -1 0 (destra)
 			xd = xp + 1;
 			zd = zp;
-			yd = -xd - zd;
 
 			row_finale = zd;
 			col_finale = xd + (zd -(zd & 1))/2;
@@ -482,7 +479,6 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			//0 -1 1 (basso destra)
 			xd = xp;
 			zd = zp + 1;
-			yd = -xd - zd;
 
 			row_finale = zd;
 			col_finale = xd + (zd -(zd & 1))/2;
@@ -495,7 +491,6 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			//-1 0 1 (basso sinistra)
 			xd = xp - 1;
 			zd = zp + 1;
-			yd = -xd - zd;
 
 			row_finale = zd;
 			col_finale = xd + (zd -(zd & 1))/2;
@@ -508,7 +503,6 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			//-1 1 0 (sinistra)
 			xd = xp - 1;
 			zd = zp;
-			yd = -xd - zd;
 
 			row_finale = zd;
 			col_finale = xd + (zd -(zd & 1))/2;
@@ -521,7 +515,6 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			//0 1 -1 (alto sinistra)
 			xd = xp;
 			zd = zp - 1;
-			yd = -xd - zd;
 
 			row_finale = zd;
 			col_finale = xd + (zd -(zd & 1))/2;
