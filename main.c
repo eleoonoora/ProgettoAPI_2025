@@ -38,25 +38,25 @@ typedef struct node {
 	int32_t indice;
 } Node;
 
-typedef struct queue {
-	int32_t size;
-	int32_t *posizione;
-	Node *minHeap;
-} Queue;
+// typedef struct queue {
+// 	int32_t size;
+// 	int32_t *posizione;
+// 	Node *minHeap;
+// } Queue;
 //========================================//
 
 int32_t AirRouteCost(Tile **map, int32_t col, int32_t row);
 int32_t Incremento(Tile **map, int32_t col, int32_t row, int32_t v, int32_t raggio, int32_t distanza);
 int32_t DistanzaEsagoni (Tile** map, int32_t cola, int32_t rowa, int32_t colb, int32_t rowb);
-Node ExtractMin (Queue *Q);
-void MinHeapify (Queue *Q, int32_t i);
-int32_t Left(int32_t i);
-int32_t Right(int32_t i);
-void Swap (Queue *Q, int32_t i, int32_t j);
-void DecreaseKey (Queue *Q, int32_t i, int32_t key);
-int32_t Parent(int32_t i);
-void HeapInsert (Queue *Q, int32_t id, int32_t key);
-void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32_t row);
+// static Node ExtractMin (Queue *Q);
+//static void MinHeapify (Queue *Q, int32_t i);
+// int32_t Left(int32_t i);
+// int32_t Right(int32_t i);
+// void Swap (Queue *Q, int32_t i, int32_t j);
+//static void DecreaseKey (Queue *Q, int32_t i, int32_t key);
+// int32_t Parent(int32_t i);
+// static void HeapInsert (Queue *Q, int32_t id, int32_t key);
+static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32_t row);
 
 //! le matrici sono map[row][col]
 
@@ -346,107 +346,164 @@ int32_t DistanzaEsagoni (Tile** map, int32_t cola, int32_t rowa, int32_t colb, i
 	return val;
 }
 
-//Gestione dell'estrazione del valore minimo dello heap
-Node ExtractMin (Queue *Q) {
-		Node min = Q->minHeap[0];
-		Q->minHeap[0] = Q->minHeap[( Q->size) - 1];
-		Q->posizione[Q->minHeap[0].indice] = 0;
-		( Q->size)--;
-		MinHeapify(Q, 0);
-		return min;
+// static Node ExtractMin (Queue *Q) {
+// 		Node min = Q->minHeap[0];
+// 		Q->minHeap[0] = Q->minHeap[( Q->size) - 1];
+// 		Q->posizione[Q->minHeap[0].indice] = 0;
+// 		( Q->size)--;
+// 		MinHeapify(Q, 0);
+// 		return min;
+//
+// }
 
-}
+// static void MinHeapify (Queue *Q, int32_t i) {
+// 	int32_t l, r, min, flag = 0;
+// 	while (flag == 0) {
+// 		l = 2 * i + 1;
+// 		r = 2 * i + 2;
+// 		min = i;
+//
+// 		if (l < Q->size && Q->minHeap[l].distanza < Q->minHeap[min].distanza) {
+// 			min = l;
+// 		}
+//
+// 		if (r < Q->size && Q->minHeap[r].distanza < Q->minHeap[min].distanza) {
+// 			min = r;
+// 		}
+//
+// 		if (min != i) {
+// 			//scambio
+// 			Node temp = Q->minHeap[i];
+// 			Q->minHeap[i] = Q->minHeap[min];
+// 			Q->minHeap[min] = temp;
+//
+// 			Q->posizione[Q->minHeap[i].indice] = i;
+// 			Q->posizione[Q->minHeap[min].indice] = min;
+//
+// 			i = min;
+// 		}else {
+// 			flag = 1;
+// 		}
+// 	}
+// }
 
-void MinHeapify (Queue *Q, int32_t i) {
-	int32_t l = Left(i);
-	int32_t r = Right(i);
-	int32_t min = i;
+// int32_t Left(int32_t i) {
+// 	return 2 * i + 1;
+// }
 
-	if (l < Q->size && Q->minHeap[l].distanza < Q->minHeap[min].distanza) {
-		min = l;
-	}
+// int32_t Right(int32_t i) {
+// 	return 2 * i + 2;
+// }
 
-	if (r < Q->size && Q->minHeap[r].distanza < Q->minHeap[min].distanza) {
-		min = r;
-	}
+// void Swap (Queue *Q, int32_t i, int32_t j) {
+// 	Node temp;
+// 	temp = Q->minHeap[i];
+// 	Q->minHeap[i] = Q->minHeap[j];
+// 	Q->minHeap[j] = temp;
+//
+// 	Q->posizione[Q->minHeap[i].indice] = i;
+// 	Q->posizione[Q->minHeap[j].indice] = j;
+//
+//
+// 		// printf("Scambio %d con %d:\n", Q->posizione[Q->minHeap[j].indice], Q->posizione[Q->minHeap[i].indice]);
+// 		// printf("0	1	2	3	4	5	6	7	8	9\n");
+// 		// for (int k=0; k<10; k++) {
+// 		// 	printf("%d	", Q->posizione[k]);
+// 		// }
+// 		// printf("\n\n");
+// }
 
-	if (min != i) {
-		Swap(Q, i, min);
-		MinHeapify(Q, min);
-	}
-}
+// static void DecreaseKey (Queue *Q, int32_t i, int32_t key) {
+// 	if (key < Q->minHeap[i].distanza) {
+// 		Q->minHeap[i].distanza = key;
+// 		int32_t parent = (i - 1) / 2;
+//
+// 		while (i > 0 && Q->minHeap[parent].distanza > Q->minHeap[i].distanza ) {
+//
+// 			//scambio
+// 			Node temp = Q->minHeap[i];
+// 			Q->minHeap[i] = Q->minHeap[parent];
+// 			Q->minHeap[parent] = temp;
+//
+// 			Q->posizione[Q->minHeap[i].indice] = i;
+// 			Q->posizione[Q->minHeap[parent].indice] = parent;
+//
+// 			i = parent;
+// 			parent = (i - 1) / 2;
+// 		}
+// 	}
+// }
 
-int32_t Left(int32_t i) {
-	return 2 * i + 1;
-}
-
-int32_t Right(int32_t i) {
-	return 2 * i + 2;
-}
-
-void Swap (Queue *Q, int32_t i, int32_t j) {
-	Node temp;
-	temp = Q->minHeap[i];
-	Q->minHeap[i] = Q->minHeap[j];
-	Q->minHeap[j] = temp;
-
-	Q->posizione[Q->minHeap[i].indice] = i;
-	Q->posizione[Q->minHeap[j].indice] = j;
-
-
-		// printf("Scambio %d con %d:\n", Q->posizione[Q->minHeap[j].indice], Q->posizione[Q->minHeap[i].indice]);
-		// printf("0	1	2	3	4	5	6	7	8	9\n");
-		// for (int k=0; k<10; k++) {
-		// 	printf("%d	", Q->posizione[k]);
-		// }
-		// printf("\n\n");
-}
-
-//gestione per "alzare" un nodo dopo una modifica
-void DecreaseKey (Queue *Q, int32_t i, int32_t key) {
-	if (key < Q->minHeap[i].distanza) {
-		Q->minHeap[i].distanza = key;
-		while (i > 0 && Q->minHeap[Parent(i)].distanza > Q->minHeap[i].distanza ) {
-			Swap(Q, i, Parent(i));
-			i = Parent(i);
-		}
-	}
-}
-
-int32_t Parent(int32_t i) {
-	return (i - 1) / 2;
-}
+// int32_t Parent(int32_t i) {
+// 	return (i - 1) / 2;
+// }
 
 //Gestione dell'inserimento nello heap
-void HeapInsert (Queue *Q, int32_t id, int32_t key) {
-	Q->minHeap[Q->size].distanza = key;
-	Q->minHeap[Q->size].indice = id;
-	DecreaseKey(Q, Q->size,key);
+// static void HeapInsert (Queue *Q, int32_t id, int32_t key) {
+// 	Q->minHeap[Q->size].distanza = key;
+// 	Q->minHeap[Q->size].indice = id;
+// 	DecreaseKey(Q, Q->size,key);
+//
+// 	Q->size += 1;
+// }
 
-	Q->size += 1;
-}
+static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32_t row) {
 
-void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32_t row) {
-	int32_t **distance = malloc(sizeof(int32_t*) * (row));
-	for (int32_t i = 0; i < row; i++) {
-		distance[i] = malloc(sizeof(int32_t*) * (col));
-	}
+	int32_t distance[row][col];
+	// int32_t **distance = malloc(sizeof(int32_t*) * (row));
+	// for (int32_t i = 0; i < row; i++) {
+	// 	distance[i] = malloc(sizeof(int32_t*) * (col));
+	// }
 
-	Queue *Q = malloc(sizeof(Queue));
-	Q->minHeap = malloc(sizeof(Node) * (row*col));
-	Q->size = 0;
-	Q->posizione = malloc(sizeof(int32_t) * (row*col));
+	//Queue Q;
+	int32_t size = 0;
+	Node minHeap[row*col];
+	int32_t posizione[row*col];
+	// Queue *Q = malloc(sizeof(Queue));
+	// Q->minHeap = malloc(sizeof(Node) * (row*col));
+	// Q->size = 0;
+	// Q->posizione = malloc(sizeof(int32_t) * (row*col));
 
 	distance[idp/col][idp%col] = 0;
-	HeapInsert (Q, idp,0);
-	Q->posizione[idp] = 0;
+
+	//inserisco nello heap
+	minHeap[size].distanza = 0;
+	minHeap[size].indice = idp;
+	size += 1;
+	posizione[idp] = 0;
 
 	for (int32_t i = 0; i < row; i++) {
 		for (int32_t j = 0; j < col; j++) {
 			if ((i*col)+j != idp) {
-				Q->posizione[(i*col)+j] = Q->size;
+				posizione[(i*col)+j] = size;
 				distance[i][j] = INF;
-				HeapInsert (Q, (i*col)+j, INF);
+
+				//inserisco nello heap
+				minHeap[size].distanza = INF;
+				minHeap[size].indice = (i*col)+j;
+
+				// //DecreaseKey
+				// int32_t k = size;
+				// if (INF < minHeap[k].distanza) {
+				// 	minHeap[k].distanza = INF;
+				// 	int32_t parent = (k - 1) / 2;
+				//
+				// 	while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+				//
+				// 		//scambio
+				// 		Node temp = minHeap[k];
+				// 		minHeap[k] = minHeap[parent];
+				// 		minHeap[parent] = temp;
+				//
+				// 		posizione[minHeap[k].indice] = k;
+				// 		posizione[minHeap[parent].indice] = parent;
+				//
+				// 		k = parent;
+				// 		parent = (k - 1) / 2;
+				// 	}
+				// }
+
+				size += 1;
 			}
 		}
 	}
@@ -458,9 +515,44 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 	// }
 	// printf("\n\n");
 
-	while (Q->size > 0) {
-		Node u;
-		u = ExtractMin (Q);
+	while (size > 0) {
+		//estraggo il nodo a distanza minore
+		Node u = minHeap[0];
+		minHeap[0] = minHeap[(size) - 1];
+		posizione[minHeap[0].indice] = 0;
+		size--;
+
+		//MinHeapify
+		int32_t l, r, min, flag = 0, nodoHeap;
+		nodoHeap = 0;
+		while (flag == 0) {
+			l = 2 * nodoHeap + 1;
+			r = 2 * nodoHeap + 2;
+			min = nodoHeap;
+
+			if (l < size && minHeap[l].distanza < minHeap[min].distanza) {
+				min = l;
+			}
+
+			if (r < size && minHeap[r].distanza < minHeap[min].distanza) {
+				min = r;
+			}
+
+			if (min != nodoHeap) {
+				//scambio
+				Node temp = minHeap[nodoHeap];
+				minHeap[nodoHeap] = minHeap[min];
+				minHeap[min] = temp;
+
+				posizione[minHeap[nodoHeap].indice] = nodoHeap;
+				posizione[minHeap[min].indice] = min;
+
+				nodoHeap = min;
+			}else {
+				flag = 1;
+			}
+		}
+
 		int32_t y = u.indice / col;
 		int32_t x = u.indice % col;
 		int32_t w = G[y][x].cost;
@@ -480,7 +572,27 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			idFinale = row_finale*col+col_finale;
 			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
 				distance[row_finale][col_finale] = u.distanza + w;
-				DecreaseKey (Q, Q->posizione[idFinale], distance[row_finale][col_finale]);
+
+				//DecreaseKey
+				int32_t k = posizione[idFinale];
+				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+					minHeap[k].distanza = distance[row_finale][col_finale];
+					int32_t parent = (k - 1) / 2;
+
+					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+						//scambio
+						Node temp = minHeap[k];
+						minHeap[k] = minHeap[parent];
+						minHeap[parent] = temp;
+
+						posizione[minHeap[k].indice] = k;
+						posizione[minHeap[parent].indice] = parent;
+
+						k = parent;
+						parent = (k - 1) / 2;
+					}
+				}
 			}
 
 			//1 -1 0 (destra)
@@ -492,7 +604,27 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			idFinale = row_finale*col+col_finale;
 			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
 				distance[row_finale][col_finale]  = u.distanza + w;
-				DecreaseKey (Q, Q->posizione[idFinale], distance[row_finale][col_finale]);
+
+				//DecreaseKey
+				int32_t k = posizione[idFinale];
+				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+					minHeap[k].distanza = distance[row_finale][col_finale];
+					int32_t parent = (k - 1) / 2;
+
+					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+						//scambio
+						Node temp = minHeap[k];
+						minHeap[k] = minHeap[parent];
+						minHeap[parent] = temp;
+
+						posizione[minHeap[k].indice] = k;
+						posizione[minHeap[parent].indice] = parent;
+
+						k = parent;
+						parent = (k - 1) / 2;
+					}
+				}
 			}
 
 			//0 -1 1 (basso destra)
@@ -504,7 +636,27 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			idFinale = row_finale*col+col_finale;
 			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
 				distance[row_finale][col_finale]  = u.distanza + w;
-				DecreaseKey (Q, Q->posizione[idFinale], distance[row_finale][col_finale]);
+
+				//DecreaseKey
+				int32_t k = posizione[idFinale];
+				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+					minHeap[k].distanza = distance[row_finale][col_finale];
+					int32_t parent = (k - 1) / 2;
+
+					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+						//scambio
+						Node temp = minHeap[k];
+						minHeap[k] = minHeap[parent];
+						minHeap[parent] = temp;
+
+						posizione[minHeap[k].indice] = k;
+						posizione[minHeap[parent].indice] = parent;
+
+						k = parent;
+						parent = (k - 1) / 2;
+					}
+				}
 			}
 
 			//-1 0 1 (basso sinistra)
@@ -516,7 +668,27 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			idFinale = row_finale*col+col_finale;
 			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
 				distance[row_finale][col_finale]  = u.distanza + w;
-				DecreaseKey (Q, Q->posizione[idFinale], distance[row_finale][col_finale]);
+
+				//DecreaseKey
+				int32_t k = posizione[idFinale];
+				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+					minHeap[k].distanza = distance[row_finale][col_finale];
+					int32_t parent = (k - 1) / 2;
+
+					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+						//scambio
+						Node temp = minHeap[k];
+						minHeap[k] = minHeap[parent];
+						minHeap[parent] = temp;
+
+						posizione[minHeap[k].indice] = k;
+						posizione[minHeap[parent].indice] = parent;
+
+						k = parent;
+						parent = (k - 1) / 2;
+					}
+				}
 			}
 
 			//-1 1 0 (sinistra)
@@ -528,7 +700,27 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			idFinale = (row_finale*col)+col_finale;
 			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
 				distance[row_finale][col_finale]  = u.distanza + w;
-				DecreaseKey (Q, Q->posizione[idFinale], distance[row_finale][col_finale]);
+
+				//DecreaseKey
+				int32_t k = posizione[idFinale];
+				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+					minHeap[k].distanza = distance[row_finale][col_finale];
+					int32_t parent = (k - 1) / 2;
+
+					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+						//scambio
+						Node temp = minHeap[k];
+						minHeap[k] = minHeap[parent];
+						minHeap[parent] = temp;
+
+						posizione[minHeap[k].indice] = k;
+						posizione[minHeap[parent].indice] = parent;
+
+						k = parent;
+						parent = (k - 1) / 2;
+					}
+				}
 			}
 
 			//0 1 -1 (alto sinistra)
@@ -540,7 +732,27 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 			idFinale = row_finale*col+col_finale;
 			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
 				distance[row_finale][col_finale]  = u.distanza + w;
-				DecreaseKey (Q, Q->posizione[idFinale], distance[row_finale][col_finale]);
+
+				//DecreaseKey
+				int32_t k = posizione[idFinale];
+				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+					minHeap[k].distanza = distance[row_finale][col_finale];
+					int32_t parent = (k - 1) / 2;
+
+					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+						//scambio
+						Node temp = minHeap[k];
+						minHeap[k] = minHeap[parent];
+						minHeap[parent] = temp;
+
+						posizione[minHeap[k].indice] = k;
+						posizione[minHeap[parent].indice] = parent;
+
+						k = parent;
+						parent = (k - 1) / 2;
+					}
+				}
 			}
 
 			//air route
@@ -548,7 +760,27 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 				idFinale = G[y][x].array[i].yDest * col + G[y][x].array[i].xDest;
 				if (idFinale >=0 && idFinale < row*col && distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest]  > u.distanza + G[y][x].array[i].costAirRoute) {
 					distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest]  = u.distanza + G[y][x].array[i].costAirRoute;
-					DecreaseKey (Q, Q->posizione[idFinale], distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest]);
+
+					//DecreaseKey
+					int32_t k = posizione[idFinale];
+					if (distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest];
+						int32_t parent = (k - 1) / 2;
+
+						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+							//scambio
+							Node temp = minHeap[k];
+							minHeap[k] = minHeap[parent];
+							minHeap[parent] = temp;
+
+							posizione[minHeap[k].indice] = k;
+							posizione[minHeap[parent].indice] = parent;
+
+							k = parent;
+							parent = (k - 1) / 2;
+						}
+					}
 				}
 			}
 		}
@@ -578,19 +810,4 @@ void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32
 	else {
 		printf("%d\n", distance[idd/col][idd%col]);
 	}
-
-	for (int32_t i = 0; i < row; i++) {
-		free(distance[i]);
-	}
-	free(distance);
-	distance = NULL;
-
-	free(Q->posizione);
-	Q->posizione = NULL;
-
-	free(Q->minHeap);
-	Q->minHeap = NULL;
-
-	free(Q);
-	Q = NULL;
 }
