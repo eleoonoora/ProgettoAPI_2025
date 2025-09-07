@@ -449,13 +449,13 @@ int32_t DistanzaEsagoni (Tile** map, int32_t cola, int32_t rowa, int32_t colb, i
 
 static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32_t row) {
 
-	int32_t distance[row][col];
+	int32_t distance[row*col];
 
 	int32_t size = 0;
 	Node minHeap[row*col];
 	int32_t posizione[row*col];
 
-	distance[idp/col][idp%col] = 0;
+	distance[idp] = 0;
 
 	//inserisco nello heap
 	minHeap[size].distanza = 0;
@@ -463,19 +463,18 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 	size += 1;
 	posizione[idp] = 0;
 
-	for (int32_t i = 0; i < row; i++) {
-		for (int32_t j = 0; j < col; j++) {
-			if ((i*col)+j != idp) {
-				posizione[(i*col)+j] = size;
-				distance[i][j] = INF;
+	for (int32_t i = 0; i < row*col; i++) {
+		if (i != idp) {
+			posizione[i] = size;
+			distance[i] = INF;
 
-				//inserisco nello heap
-				minHeap[size].distanza = INF;
-				minHeap[size].indice = (i*col)+j;
+			//inserisco nello heap
+			minHeap[size].distanza = INF;
+			minHeap[size].indice = i;
 
-				size += 1;
-			}
+			size += 1;
 		}
+
 	}
 
 	// printf("ARRAY POSIZIONI - INIZIALE:\n");
@@ -492,6 +491,7 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 		Node u = minHeap[0];
 
 		if (u.indice != INF && u.indice != idd) {
+			posizione[u.indice] = -1;
 			minHeap[0] = minHeap[(size) - 1];
 			posizione[minHeap[0].indice] = 0;
 			size--;
@@ -544,13 +544,13 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 				row_finale = zd;
 				col_finale = xd + (zd -(zd & 1))/2;
 				idFinale = row_finale*col+col_finale;
-				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-					distance[row_finale][col_finale] = u.distanza + w;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[idFinale]  > u.distanza + w && posizione[idFinale] != -1) {
+					distance[idFinale] = u.distanza + w;
 
 					//DecreaseKey
 					int32_t k = posizione[idFinale];
-					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-						minHeap[k].distanza = distance[row_finale][col_finale];
+					if (distance[idFinale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[idFinale];
 						int32_t parent = (k - 1) / 2;
 
 						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
@@ -576,13 +576,13 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 				row_finale = zd;
 				col_finale = xd + (zd -(zd & 1))/2;
 				idFinale = row_finale*col+col_finale;
-				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-					distance[row_finale][col_finale]  = u.distanza + w;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale < row*col && distance[idFinale]  > u.distanza + w && posizione[idFinale] != -1) {
+					distance[idFinale]  = u.distanza + w;
 
 					//DecreaseKey
 					int32_t k = posizione[idFinale];
-					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-						minHeap[k].distanza = distance[row_finale][col_finale];
+					if (distance[idFinale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[idFinale];
 						int32_t parent = (k - 1) / 2;
 
 						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
@@ -608,13 +608,13 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 				row_finale = zd;
 				col_finale = xd + (zd -(zd & 1))/2;
 				idFinale = row_finale*col+col_finale;
-				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-					distance[row_finale][col_finale]  = u.distanza + w;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[idFinale]  > u.distanza + w && posizione[idFinale] != -1) {
+					distance[idFinale]  = u.distanza + w;
 
 					//DecreaseKey
 					int32_t k = posizione[idFinale];
-					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-						minHeap[k].distanza = distance[row_finale][col_finale];
+					if (distance[idFinale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[idFinale];
 						int32_t parent = (k - 1) / 2;
 
 						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
@@ -640,13 +640,13 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 				row_finale = zd;
 				col_finale = xd + (zd -(zd & 1))/2;
 				idFinale = row_finale*col+col_finale;
-				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-					distance[row_finale][col_finale]  = u.distanza + w;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[idFinale]  > u.distanza + w && posizione[idFinale] != -1) {
+					distance[idFinale]  = u.distanza + w;
 
 					//DecreaseKey
 					int32_t k = posizione[idFinale];
-					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-						minHeap[k].distanza = distance[row_finale][col_finale];
+					if (distance[idFinale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[idFinale];
 						int32_t parent = (k - 1) / 2;
 
 						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
@@ -672,13 +672,13 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 				row_finale = zd;
 				col_finale = xd + (zd -(zd & 1))/2;
 				idFinale = (row_finale*col)+col_finale;
-				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-					distance[row_finale][col_finale]  = u.distanza + w;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[idFinale]  > u.distanza + w && posizione[idFinale] != -1) {
+					distance[idFinale]  = u.distanza + w;
 
 					//DecreaseKey
 					int32_t k = posizione[idFinale];
-					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-						minHeap[k].distanza = distance[row_finale][col_finale];
+					if (distance[idFinale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[idFinale];
 						int32_t parent = (k - 1) / 2;
 
 						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
@@ -704,13 +704,13 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 				row_finale = zd;
 				col_finale = xd + (zd -(zd & 1))/2;
 				idFinale = row_finale*col+col_finale;
-				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-					distance[row_finale][col_finale]  = u.distanza + w;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[idFinale]  > u.distanza + w && posizione[idFinale] != -1) {
+					distance[idFinale]  = u.distanza + w;
 
 					//DecreaseKey
 					int32_t k = posizione[idFinale];
-					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-						minHeap[k].distanza = distance[row_finale][col_finale];
+					if (distance[idFinale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[idFinale];
 						int32_t parent = (k - 1) / 2;
 
 						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
@@ -732,13 +732,13 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 				//air route
 				for (int32_t i = 0; i < G[y][x].numAirRoute; i++) {
 					idFinale = G[y][x].array[i].yDest * col + G[y][x].array[i].xDest;
-					if (idFinale >=0 && idFinale < row*col && distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest]  > u.distanza + G[y][x].array[i].costAirRoute) {
-						distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest]  = u.distanza + G[y][x].array[i].costAirRoute;
+					if (idFinale >=0 && idFinale < row*col && distance[G[y][x].array[i].yDest*col+G[y][x].array[i].xDest]  > u.distanza + G[y][x].array[i].costAirRoute && posizione[idFinale] != -1) {
+						distance[G[y][x].array[i].yDest*col+G[y][x].array[i].xDest]  = u.distanza + G[y][x].array[i].costAirRoute;
 
 						//DecreaseKey
 						int32_t k = posizione[idFinale];
-						if (distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest] < minHeap[k].distanza) {
-							minHeap[k].distanza = distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest];
+						if (distance[G[y][x].array[i].yDest*col+G[y][x].array[i].xDest] < minHeap[k].distanza) {
+							minHeap[k].distanza = distance[G[y][x].array[i].yDest*col+G[y][x].array[i].xDest];
 							int32_t parent = (k - 1) / 2;
 
 							while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
@@ -780,10 +780,10 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 		// printf("\n\n");
 
 
-	if (distance[idd/col][idd%col] >= INF) {
+	if (distance[idd] >= INF) {
 		printf("-1\n");
 	}
 	else {
-		printf("%d\n", distance[idd/col][idd%col]);
+		printf("%d\n", distance[idd]);
 	}
 }
