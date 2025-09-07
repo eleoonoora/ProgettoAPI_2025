@@ -138,7 +138,7 @@ int32_t main() {
 			}
 
 			//creazione della cache
-			cache.capacity = 8;
+			cache.capacity = 16;
 			cache.size = 0;
 			cache.tiles = malloc(cache.capacity * sizeof(TileCache));
 
@@ -385,8 +385,8 @@ int32_t main() {
 							//Altrimenti devo aggiungere entrambe
 
 							//Nuova tile nella cache, se è vuota la devo allocare di nuovo
-							if (cache.size == 0) {
-								cache.capacity = 8; // dimensione iniziale
+							if (cache.tiles == NULL) {
+								cache.capacity = 16;
 								cache.size = 0;
 								cache.tiles = malloc(cache.capacity * sizeof(TileCache));
 							}
@@ -399,7 +399,7 @@ int32_t main() {
 
 							TileCache *new = &cache.tiles[cache.size];
 							new->idp = idp;
-							new->capacity = 8;
+							new->capacity = 32;
 							new->size = 0;
 							new->destinazioni = malloc(new->capacity * sizeof(Destinazioni));
 
@@ -409,7 +409,7 @@ int32_t main() {
 								cache.tiles[tileStart].destinazioni = realloc(cache.tiles[tileStart].destinazioni, cache.tiles[tileStart].capacity * sizeof(Destinazioni));
 							}
 
-							Destinazioni *new2 = &cache.tiles[tileStart].destinazioni[cache.tiles[new->size].size];
+							Destinazioni *new2 = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
 							new2->idd = idd;
 							new2->distanza = risultato;
 							cache.tiles[tileStart].size++;
