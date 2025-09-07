@@ -87,7 +87,7 @@ int32_t main() {
 	char command[64];
 	int32_t res = 0, row = 0, col = 0;
 	Tile **map = NULL;
-	Cache cache;
+	Cache cache = {0};
 
 	int32_t comandi = 0;
 
