@@ -4,15 +4,8 @@
 #include <math.h>
 
 #define INF 2000000000
-#define MAX_CACHE 16
-#define MAX_TILE 64
-
-/*
- *	Struttura delle tile: per ogni esagono della mappa vengono salvate le cordinate delle x, delle y, il costo di
- *	transito e una lista concatenata per gestire le rotte aeree.
- *	Nella tile ho deciso di salvare le cordinate cubiche della tessera. dalla matrice map si accede alla tile con
- *	le cordinate con la convenzione dell'utente, queste verranno trasformate in cubiche per i calcoli e le ricerche.
- */
+#define MAX_CACHE 12
+#define MAX_TILE 100
 
 //================= CACHE =================//
 typedef struct destinazione {
@@ -30,7 +23,6 @@ typedef struct cache {
 	int32_t size;
 	TileCache tiles[MAX_TILE];
 } Cache;
-
 //=========================================//
 
 //================= TILE =================//
@@ -49,7 +41,6 @@ typedef struct tile {
 	int32_t numAirRoute;
 	AirRoute *array;
 } Tile;
-
 //========================================//
 
 //================= HEAP =================//
@@ -57,19 +48,11 @@ typedef struct node {
 	int32_t distanza;
 	int32_t indice;
 } Node;
-
-// typedef struct queue {
-// 	int32_t size;
-// 	int32_t *posizione;
-// 	Node *minHeap;
-// } Queue;
 //========================================//
 
-int32_t AirRouteCost(Tile **map, int32_t col, int32_t row);
-
-int32_t Incremento(Tile **map, int32_t col, int32_t row, int32_t v, int32_t raggio, int32_t distanza);
-
-int32_t DistanzaEsagoni(Tile **map, int32_t cola, int32_t rowa, int32_t colb, int32_t rowb);
+static inline int32_t AirRouteCost(Tile **map, int32_t col, int32_t row);
+static inline int32_t Incremento(Tile **map, int32_t col, int32_t row, int32_t v, int32_t raggio, int32_t distanza);
+static inline int32_t DistanzaEsagoni(Tile **map, int32_t cola, int32_t rowa, int32_t colb, int32_t rowb);
 
 // static Node ExtractMin (Queue *Q);
 //static void MinHeapify (Queue *Q, int32_t i);
@@ -89,10 +72,7 @@ int32_t main() {
 	Tile **map = NULL;
 	Cache cache = {0};
 
-	int32_t comandi = 0;
-
 	while ((res = scanf("%s", command)) != EOF) {
-		comandi++;
 		if (strcmp(command, "init") == 0) {
 			//se la mappa è già presente la si libera
 			if (map != NULL) {
@@ -141,19 +121,16 @@ int32_t main() {
 		} else if (strcmp(command, "change_cost") == 0) {
 			int32_t colStart, rowStart, v, raggio, hColo, val;
 			res = scanf("%d" "%d" "%d" "%d", &colStart, &rowStart, &v, &raggio);
-			if (rowStart < row && rowStart >= 0 && colStart < col && colStart >= 0 && raggio > 1 && -10 <= v && v <=
-			    10) {
+			if (rowStart < row && rowStart >= 0 && colStart < col && colStart >= 0 && raggio > 1 && -10 <= v && v <= 10) {
 				hColo = 1;
 				//loop per le colonne da modificare (asse x)
 				for (int32_t i = -raggio + 1; i <= raggio - 1; i++) {
 					//loop per le righe da modificare (asse y)
-					if ((colStart + i) >= 0 && (colStart + i) < col) {
-						//solo se esiste la colonna, risparimo tempo
+					if ((colStart + i) >= 0 && (colStart + i) < col) { //solo se esiste la colonna
 						for (int32_t j = -hColo; j <= hColo; j++) {
 							if ((rowStart + j) >= 0 && (rowStart + j) < row) {
 								// solo se esiste la riga
-								val = Incremento(map, colStart + i, rowStart + j, v, raggio,
-								                 DistanzaEsagoni(map, colStart, rowStart, colStart + i, rowStart + j));
+								val = Incremento(map, colStart + i, rowStart + j, v, raggio, DistanzaEsagoni(map, colStart, rowStart, colStart + i, rowStart + j));
 								if (val > 0 && val <= 100) {
 									//lo aggiorna solo se il nuovo costo (finale) è tra 0 e 100
 									map[rowStart + j][colStart + i].cost = val;
@@ -401,7 +378,7 @@ int32_t main() {
 	map = NULL;
 }
 
-int32_t AirRouteCost(Tile **map, int32_t col, int32_t row) {
+static inline int32_t AirRouteCost(Tile **map, int32_t col, int32_t row) {
 	int32_t sum = 0;
 	for (int32_t i = 0; i < map[row][col].numAirRoute; i++) {
 		sum = sum + map[row][col].array[i].costAirRoute;
@@ -410,7 +387,7 @@ int32_t AirRouteCost(Tile **map, int32_t col, int32_t row) {
 	return sum;
 }
 
-int32_t Incremento(Tile **map, int32_t col, int32_t row, int32_t v, int32_t raggio, int32_t distanza) {
+static inline int32_t Incremento(Tile **map, int32_t col, int32_t row, int32_t v, int32_t raggio, int32_t distanza) {
 	int32_t costo;
 	float temp;
 
@@ -424,7 +401,7 @@ int32_t Incremento(Tile **map, int32_t col, int32_t row, int32_t v, int32_t ragg
 	return costo;
 }
 
-int32_t DistanzaEsagoni(Tile **map, int32_t cola, int32_t rowa, int32_t colb, int32_t rowb) {
+static inline int32_t DistanzaEsagoni(Tile **map, int32_t cola, int32_t rowa, int32_t colb, int32_t rowb) {
 	//visto che uso le coordinate cubiche la formula è veloce
 	int32_t dx, dy, dz, val;
 	dx = abs(map[rowa][cola].x - map[rowb][colb].x);
