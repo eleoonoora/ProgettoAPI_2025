@@ -4,6 +4,8 @@
 #include <math.h>
 
 #define INF 2000000000
+#define MAX_CACHE 16
+#define MAX_TILE 32
 
 /*
  *	Struttura delle tile: per ogni esagono della mappa vengono salvate le cordinate delle x, delle y, il costo di
@@ -20,15 +22,13 @@ typedef struct destinazione {
 
 typedef struct tileCache {
 	int32_t idp;
-	int32_t capacity;
 	int32_t size;
-	Destinazioni *destinazioni;
+	Destinazioni destinazioni[MAX_CACHE];
 } TileCache;
 
 typedef struct cache {
-	int32_t capacity;
 	int32_t size;
-	TileCache *tiles;
+	TileCache tiles[MAX_TILE];
 } Cache;
 
 //=========================================//
@@ -87,7 +87,7 @@ int32_t main() {
 	char command[64];
 	int32_t res = 0, row = 0, col = 0;
 	Tile **map = NULL;
-	Cache cache = {0, 0, NULL};
+	Cache cache = {0, 0, 0};
 
 	int32_t comandi = 0;
 
@@ -96,12 +96,9 @@ int32_t main() {
 		if (strcmp(command, "init") == 0) {
 			//se la mappa è già presente la si libera
 			if (map != NULL) {
-				for (int32_t i = 0; i < cache.size; i++) {
-					free(cache.tiles[i].destinazioni);
-					cache.tiles[i].destinazioni = NULL;
+				for (int i = 0; i < cache.size; i++) {
+					cache.tiles[i].size = 0;
 				}
-				free(cache.tiles);
-				cache.tiles = NULL;
 				cache.size = 0;
 
 				for (int32_t i = 0; i < row; i++) {
@@ -138,9 +135,7 @@ int32_t main() {
 			}
 
 			//creazione della cache
-			cache.capacity = 16;
 			cache.size = 0;
-			cache.tiles = malloc(cache.capacity * sizeof(TileCache));
 
 			printf("OK\n");
 		} else if (strcmp(command, "change_cost") == 0) {
@@ -199,12 +194,9 @@ int32_t main() {
 				}
 
 				//reset di tutta la cache per cambiamento costi
-				for (int32_t i = 0; i < cache.size; i++) {
-					free(cache.tiles[i].destinazioni);
-					cache.tiles[i].destinazioni = NULL;
+				for (int i = 0; i < cache.size; i++) {
+					cache.tiles[i].size = 0;
 				}
-				free(cache.tiles);
-				cache.tiles = NULL;
 				cache.size = 0;
 
 				printf("OK\n");
@@ -232,12 +224,9 @@ int32_t main() {
 				}
 
 				//reset di tutta la cache per cambiamento costi
-				for (int32_t i = 0; i < cache.size; i++) {
-					free(cache.tiles[i].destinazioni);
-					cache.tiles[i].destinazioni = NULL;
+				for (int i = 0; i < cache.size; i++) {
+					cache.tiles[i].size = 0;
 				}
-				free(cache.tiles);
-				cache.tiles = NULL;
 				cache.size = 0;
 
 				printf("OK\n");
@@ -293,12 +282,9 @@ int32_t main() {
 					}
 
 					//reset di tutta la cache per cambiamento costi
-					for (int32_t i = 0; i < cache.size; i++) {
-						free(cache.tiles[i].destinazioni);
-						cache.tiles[i].destinazioni = NULL;
+					for (int i = 0; i < cache.size; i++) {
+						cache.tiles[i].size = 0;
 					}
-					free(cache.tiles);
-					cache.tiles = NULL;
 					cache.size = 0;
 				}
 				//altrimenti lo aggiunge solo se ce ne sono meno di 5
@@ -312,12 +298,9 @@ int32_t main() {
 					map[row_start][col_start].array = airRouteNew;
 
 					//reset di tutta la cache per cambiamento costi
-					for (int32_t i = 0; i < cache.size; i++) {
-						free(cache.tiles[i].destinazioni);
-						cache.tiles[i].destinazioni = NULL;
+					for (int i = 0; i < cache.size; i++) {
+						cache.tiles[i].size = 0;
 					}
-					free(cache.tiles);
-					cache.tiles = NULL;
 					cache.size = 0;
 
 					printf("OK\n");
@@ -372,61 +355,35 @@ int32_t main() {
 
 						//Se c'è la tile ma non la destinazione aggiungo solo quella
 						if (flag_idp_found == 1 && flag_idd_found == 0) {
-							if (cache.tiles[tileStart].size == cache.tiles[tileStart].capacity) {
-								cache.tiles[tileStart].capacity *= 2;
-								cache.tiles[tileStart].destinazioni = realloc(cache.tiles[tileStart].destinazioni, cache.tiles[tileStart].capacity * sizeof(Destinazioni));
+							if (cache.tiles[tileStart].size < MAX_CACHE) {
+								Destinazioni *new = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
+								new->idd = idd;
+								new->distanza = risultato;
+								cache.tiles[tileStart].size++;
 							}
-
-							Destinazioni *new = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
-							new->idd = idd;
-							new->distanza = risultato;
-							cache.tiles[tileStart].size++;
 						} else {
 							//Altrimenti devo aggiungere entrambe
+							if (cache.size < MAX_TILE) {
+								TileCache *new = &cache.tiles[cache.size];
+								new->idp = idp;
+								new->size = 0;
 
-							//Nuova tile nella cache, se è vuota la devo allocare di nuovo
-							if (cache.tiles == NULL) {
-								cache.capacity = 16;
-								cache.size = 0;
-								cache.tiles = malloc(cache.capacity * sizeof(TileCache));
+								//Singola destinazione
+								Destinazioni *new2 = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
+								new2->idd = idd;
+								new2->distanza = risultato;
+								cache.tiles[tileStart].size++;
+
+								cache.size++;
 							}
 
-							//Se è piena, devo riallocare
-							if (cache.size == cache.capacity) {
-								cache.capacity *= 2;
-								cache.tiles = realloc(cache.tiles, cache.capacity * sizeof(TileCache));
-							}
 
-							TileCache *new = &cache.tiles[cache.size];
-							new->idp = idp;
-							new->capacity = 32;
-							new->size = 0;
-							new->destinazioni = malloc(new->capacity * sizeof(Destinazioni));
-
-							//Singola destinazione
-							if (cache.tiles[tileStart].size == cache.tiles[tileStart].capacity) {
-								cache.tiles[tileStart].capacity *= 2;
-								cache.tiles[tileStart].destinazioni = realloc(cache.tiles[tileStart].destinazioni, cache.tiles[tileStart].capacity * sizeof(Destinazioni));
-							}
-
-							Destinazioni *new2 = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
-							new2->idd = idd;
-							new2->distanza = risultato;
-							cache.tiles[tileStart].size++;
-
-							cache.size++;
 						}
 					}
 				}
 			}
 		}
 	}
-	for (int32_t i = 0; i < cache.size; i++) {
-		free(cache.tiles[i].destinazioni);
-		cache.tiles[i].destinazioni = NULL;
-	}
-	free(cache.tiles);
-	cache.size = 0;
 
 	for (int32_t i = 0; i < row; i++) {
 		for (int32_t j = 0; j < col; j++) {
