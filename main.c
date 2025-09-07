@@ -450,19 +450,10 @@ int32_t DistanzaEsagoni (Tile** map, int32_t cola, int32_t rowa, int32_t colb, i
 static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32_t row) {
 
 	int32_t distance[row][col];
-	// int32_t **distance = malloc(sizeof(int32_t*) * (row));
-	// for (int32_t i = 0; i < row; i++) {
-	// 	distance[i] = malloc(sizeof(int32_t*) * (col));
-	// }
 
-	//Queue Q;
 	int32_t size = 0;
 	Node minHeap[row*col];
 	int32_t posizione[row*col];
-	// Queue *Q = malloc(sizeof(Queue));
-	// Q->minHeap = malloc(sizeof(Node) * (row*col));
-	// Q->size = 0;
-	// Q->posizione = malloc(sizeof(int32_t) * (row*col));
 
 	distance[idp/col][idp%col] = 0;
 
@@ -482,27 +473,6 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 				minHeap[size].distanza = INF;
 				minHeap[size].indice = (i*col)+j;
 
-				// //DecreaseKey
-				// int32_t k = size;
-				// if (INF < minHeap[k].distanza) {
-				// 	minHeap[k].distanza = INF;
-				// 	int32_t parent = (k - 1) / 2;
-				//
-				// 	while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
-				//
-				// 		//scambio
-				// 		Node temp = minHeap[k];
-				// 		minHeap[k] = minHeap[parent];
-				// 		minHeap[parent] = temp;
-				//
-				// 		posizione[minHeap[k].indice] = k;
-				// 		posizione[minHeap[parent].indice] = parent;
-				//
-				// 		k = parent;
-				// 		parent = (k - 1) / 2;
-				// 	}
-				// }
-
 				size += 1;
 			}
 		}
@@ -515,256 +485,72 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 	// }
 	// printf("\n\n");
 
-	while (size > 0) {
+	int32_t flagInf = 0;
+
+	while (size > 0 && flagInf == 0) {
 		//estraggo il nodo a distanza minore
 		Node u = minHeap[0];
-		minHeap[0] = minHeap[(size) - 1];
-		posizione[minHeap[0].indice] = 0;
-		size--;
 
-		//MinHeapify
-		int32_t l, r, min, flag = 0, nodoHeap;
-		nodoHeap = 0;
-		while (flag == 0) {
-			l = 2 * nodoHeap + 1;
-			r = 2 * nodoHeap + 2;
-			min = nodoHeap;
+		if (u.indice != INF && u.indice != idd) {
+			minHeap[0] = minHeap[(size) - 1];
+			posizione[minHeap[0].indice] = 0;
+			size--;
 
-			if (l < size && minHeap[l].distanza < minHeap[min].distanza) {
-				min = l;
-			}
+			//MinHeapify
+			int32_t l, r, min, flag = 0, nodoHeap;
+			nodoHeap = 0;
+			while (flag == 0) {
+				l = 2 * nodoHeap + 1;
+				r = 2 * nodoHeap + 2;
+				min = nodoHeap;
 
-			if (r < size && minHeap[r].distanza < minHeap[min].distanza) {
-				min = r;
-			}
+				if (l < size && minHeap[l].distanza < minHeap[min].distanza) {
+					min = l;
+				}
 
-			if (min != nodoHeap) {
-				//scambio
-				Node temp = minHeap[nodoHeap];
-				minHeap[nodoHeap] = minHeap[min];
-				minHeap[min] = temp;
+				if (r < size && minHeap[r].distanza < minHeap[min].distanza) {
+					min = r;
+				}
 
-				posizione[minHeap[nodoHeap].indice] = nodoHeap;
-				posizione[minHeap[min].indice] = min;
+				if (min != nodoHeap) {
+					//scambio
+					Node temp = minHeap[nodoHeap];
+					minHeap[nodoHeap] = minHeap[min];
+					minHeap[min] = temp;
 
-				nodoHeap = min;
-			}else {
-				flag = 1;
-			}
-		}
+					posizione[minHeap[nodoHeap].indice] = nodoHeap;
+					posizione[minHeap[min].indice] = min;
 
-		int32_t y = u.indice / col;
-		int32_t x = u.indice % col;
-		int32_t w = G[y][x].cost;
-
-		if (G[y][x].cost != 0) {
-			int32_t xp, zp;
-			xp = x - (y - (y & 1))/2;
-			zp = y;
-
-			int32_t xd, zd, idFinale, col_finale, row_finale;
-
-			//1 0 -1 (alto destra)
-			xd = xp + 1;
-			zd = zp - 1;
-			row_finale = zd;
-			col_finale = xd + (zd -(zd & 1))/2;
-			idFinale = row_finale*col+col_finale;
-			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-				distance[row_finale][col_finale] = u.distanza + w;
-
-				//DecreaseKey
-				int32_t k = posizione[idFinale];
-				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-					minHeap[k].distanza = distance[row_finale][col_finale];
-					int32_t parent = (k - 1) / 2;
-
-					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
-
-						//scambio
-						Node temp = minHeap[k];
-						minHeap[k] = minHeap[parent];
-						minHeap[parent] = temp;
-
-						posizione[minHeap[k].indice] = k;
-						posizione[minHeap[parent].indice] = parent;
-
-						k = parent;
-						parent = (k - 1) / 2;
-					}
+					nodoHeap = min;
+				}else {
+					flag = 1;
 				}
 			}
 
-			//1 -1 0 (destra)
-			xd = xp + 1;
-			zd = zp;
+			int32_t y = u.indice / col;
+			int32_t x = u.indice % col;
+			int32_t w = G[y][x].cost;
 
-			row_finale = zd;
-			col_finale = xd + (zd -(zd & 1))/2;
-			idFinale = row_finale*col+col_finale;
-			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-				distance[row_finale][col_finale]  = u.distanza + w;
+			if (G[y][x].cost != 0) {
+				int32_t xp, zp;
+				xp = x - (y - (y & 1))/2;
+				zp = y;
 
-				//DecreaseKey
-				int32_t k = posizione[idFinale];
-				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-					minHeap[k].distanza = distance[row_finale][col_finale];
-					int32_t parent = (k - 1) / 2;
+				int32_t xd, zd, idFinale, col_finale, row_finale;
 
-					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
-
-						//scambio
-						Node temp = minHeap[k];
-						minHeap[k] = minHeap[parent];
-						minHeap[parent] = temp;
-
-						posizione[minHeap[k].indice] = k;
-						posizione[minHeap[parent].indice] = parent;
-
-						k = parent;
-						parent = (k - 1) / 2;
-					}
-				}
-			}
-
-			//0 -1 1 (basso destra)
-			xd = xp;
-			zd = zp + 1;
-
-			row_finale = zd;
-			col_finale = xd + (zd -(zd & 1))/2;
-			idFinale = row_finale*col+col_finale;
-			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-				distance[row_finale][col_finale]  = u.distanza + w;
-
-				//DecreaseKey
-				int32_t k = posizione[idFinale];
-				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-					minHeap[k].distanza = distance[row_finale][col_finale];
-					int32_t parent = (k - 1) / 2;
-
-					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
-
-						//scambio
-						Node temp = minHeap[k];
-						minHeap[k] = minHeap[parent];
-						minHeap[parent] = temp;
-
-						posizione[minHeap[k].indice] = k;
-						posizione[minHeap[parent].indice] = parent;
-
-						k = parent;
-						parent = (k - 1) / 2;
-					}
-				}
-			}
-
-			//-1 0 1 (basso sinistra)
-			xd = xp - 1;
-			zd = zp + 1;
-
-			row_finale = zd;
-			col_finale = xd + (zd -(zd & 1))/2;
-			idFinale = row_finale*col+col_finale;
-			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-				distance[row_finale][col_finale]  = u.distanza + w;
-
-				//DecreaseKey
-				int32_t k = posizione[idFinale];
-				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-					minHeap[k].distanza = distance[row_finale][col_finale];
-					int32_t parent = (k - 1) / 2;
-
-					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
-
-						//scambio
-						Node temp = minHeap[k];
-						minHeap[k] = minHeap[parent];
-						minHeap[parent] = temp;
-
-						posizione[minHeap[k].indice] = k;
-						posizione[minHeap[parent].indice] = parent;
-
-						k = parent;
-						parent = (k - 1) / 2;
-					}
-				}
-			}
-
-			//-1 1 0 (sinistra)
-			xd = xp - 1;
-			zd = zp;
-
-			row_finale = zd;
-			col_finale = xd + (zd -(zd & 1))/2;
-			idFinale = (row_finale*col)+col_finale;
-			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-				distance[row_finale][col_finale]  = u.distanza + w;
-
-				//DecreaseKey
-				int32_t k = posizione[idFinale];
-				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-					minHeap[k].distanza = distance[row_finale][col_finale];
-					int32_t parent = (k - 1) / 2;
-
-					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
-
-						//scambio
-						Node temp = minHeap[k];
-						minHeap[k] = minHeap[parent];
-						minHeap[parent] = temp;
-
-						posizione[minHeap[k].indice] = k;
-						posizione[minHeap[parent].indice] = parent;
-
-						k = parent;
-						parent = (k - 1) / 2;
-					}
-				}
-			}
-
-			//0 1 -1 (alto sinistra)
-			xd = xp;
-			zd = zp - 1;
-
-			row_finale = zd;
-			col_finale = xd + (zd -(zd & 1))/2;
-			idFinale = row_finale*col+col_finale;
-			if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
-				distance[row_finale][col_finale]  = u.distanza + w;
-
-				//DecreaseKey
-				int32_t k = posizione[idFinale];
-				if (distance[row_finale][col_finale] < minHeap[k].distanza) {
-					minHeap[k].distanza = distance[row_finale][col_finale];
-					int32_t parent = (k - 1) / 2;
-
-					while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
-
-						//scambio
-						Node temp = minHeap[k];
-						minHeap[k] = minHeap[parent];
-						minHeap[parent] = temp;
-
-						posizione[minHeap[k].indice] = k;
-						posizione[minHeap[parent].indice] = parent;
-
-						k = parent;
-						parent = (k - 1) / 2;
-					}
-				}
-			}
-
-			//air route
-			for (int32_t i = 0; i < G[y][x].numAirRoute; i++) {
-				idFinale = G[y][x].array[i].yDest * col + G[y][x].array[i].xDest;
-				if (idFinale >=0 && idFinale < row*col && distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest]  > u.distanza + G[y][x].array[i].costAirRoute) {
-					distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest]  = u.distanza + G[y][x].array[i].costAirRoute;
+				//1 0 -1 (alto destra)
+				xd = xp + 1;
+				zd = zp - 1;
+				row_finale = zd;
+				col_finale = xd + (zd -(zd & 1))/2;
+				idFinale = row_finale*col+col_finale;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
+					distance[row_finale][col_finale] = u.distanza + w;
 
 					//DecreaseKey
 					int32_t k = posizione[idFinale];
-					if (distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest] < minHeap[k].distanza) {
-						minHeap[k].distanza = distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest];
+					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[row_finale][col_finale];
 						int32_t parent = (k - 1) / 2;
 
 						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
@@ -782,9 +568,199 @@ static inline void DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int3
 						}
 					}
 				}
-			}
-		}
 
+				//1 -1 0 (destra)
+				xd = xp + 1;
+				zd = zp;
+
+				row_finale = zd;
+				col_finale = xd + (zd -(zd & 1))/2;
+				idFinale = row_finale*col+col_finale;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
+					distance[row_finale][col_finale]  = u.distanza + w;
+
+					//DecreaseKey
+					int32_t k = posizione[idFinale];
+					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[row_finale][col_finale];
+						int32_t parent = (k - 1) / 2;
+
+						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+							//scambio
+							Node temp = minHeap[k];
+							minHeap[k] = minHeap[parent];
+							minHeap[parent] = temp;
+
+							posizione[minHeap[k].indice] = k;
+							posizione[minHeap[parent].indice] = parent;
+
+							k = parent;
+							parent = (k - 1) / 2;
+						}
+					}
+				}
+
+				//0 -1 1 (basso destra)
+				xd = xp;
+				zd = zp + 1;
+
+				row_finale = zd;
+				col_finale = xd + (zd -(zd & 1))/2;
+				idFinale = row_finale*col+col_finale;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
+					distance[row_finale][col_finale]  = u.distanza + w;
+
+					//DecreaseKey
+					int32_t k = posizione[idFinale];
+					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[row_finale][col_finale];
+						int32_t parent = (k - 1) / 2;
+
+						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+							//scambio
+							Node temp = minHeap[k];
+							minHeap[k] = minHeap[parent];
+							minHeap[parent] = temp;
+
+							posizione[minHeap[k].indice] = k;
+							posizione[minHeap[parent].indice] = parent;
+
+							k = parent;
+							parent = (k - 1) / 2;
+						}
+					}
+				}
+
+				//-1 0 1 (basso sinistra)
+				xd = xp - 1;
+				zd = zp + 1;
+
+				row_finale = zd;
+				col_finale = xd + (zd -(zd & 1))/2;
+				idFinale = row_finale*col+col_finale;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
+					distance[row_finale][col_finale]  = u.distanza + w;
+
+					//DecreaseKey
+					int32_t k = posizione[idFinale];
+					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[row_finale][col_finale];
+						int32_t parent = (k - 1) / 2;
+
+						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+							//scambio
+							Node temp = minHeap[k];
+							minHeap[k] = minHeap[parent];
+							minHeap[parent] = temp;
+
+							posizione[minHeap[k].indice] = k;
+							posizione[minHeap[parent].indice] = parent;
+
+							k = parent;
+							parent = (k - 1) / 2;
+						}
+					}
+				}
+
+				//-1 1 0 (sinistra)
+				xd = xp - 1;
+				zd = zp;
+
+				row_finale = zd;
+				col_finale = xd + (zd -(zd & 1))/2;
+				idFinale = (row_finale*col)+col_finale;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
+					distance[row_finale][col_finale]  = u.distanza + w;
+
+					//DecreaseKey
+					int32_t k = posizione[idFinale];
+					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[row_finale][col_finale];
+						int32_t parent = (k - 1) / 2;
+
+						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+							//scambio
+							Node temp = minHeap[k];
+							minHeap[k] = minHeap[parent];
+							minHeap[parent] = temp;
+
+							posizione[minHeap[k].indice] = k;
+							posizione[minHeap[parent].indice] = parent;
+
+							k = parent;
+							parent = (k - 1) / 2;
+						}
+					}
+				}
+
+				//0 1 -1 (alto sinistra)
+				xd = xp;
+				zd = zp - 1;
+
+				row_finale = zd;
+				col_finale = xd + (zd -(zd & 1))/2;
+				idFinale = row_finale*col+col_finale;
+				if (row_finale >= 0 && row_finale < row && col_finale >= 0 && col_finale < col && idFinale >=0 && idFinale < row*col && distance[row_finale][col_finale]  > u.distanza + w) {
+					distance[row_finale][col_finale]  = u.distanza + w;
+
+					//DecreaseKey
+					int32_t k = posizione[idFinale];
+					if (distance[row_finale][col_finale] < minHeap[k].distanza) {
+						minHeap[k].distanza = distance[row_finale][col_finale];
+						int32_t parent = (k - 1) / 2;
+
+						while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+							//scambio
+							Node temp = minHeap[k];
+							minHeap[k] = minHeap[parent];
+							minHeap[parent] = temp;
+
+							posizione[minHeap[k].indice] = k;
+							posizione[minHeap[parent].indice] = parent;
+
+							k = parent;
+							parent = (k - 1) / 2;
+						}
+					}
+				}
+
+				//air route
+				for (int32_t i = 0; i < G[y][x].numAirRoute; i++) {
+					idFinale = G[y][x].array[i].yDest * col + G[y][x].array[i].xDest;
+					if (idFinale >=0 && idFinale < row*col && distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest]  > u.distanza + G[y][x].array[i].costAirRoute) {
+						distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest]  = u.distanza + G[y][x].array[i].costAirRoute;
+
+						//DecreaseKey
+						int32_t k = posizione[idFinale];
+						if (distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest] < minHeap[k].distanza) {
+							minHeap[k].distanza = distance[G[y][x].array[i].yDest][G[y][x].array[i].xDest];
+							int32_t parent = (k - 1) / 2;
+
+							while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza ) {
+
+								//scambio
+								Node temp = minHeap[k];
+								minHeap[k] = minHeap[parent];
+								minHeap[parent] = temp;
+
+								posizione[minHeap[k].indice] = k;
+								posizione[minHeap[parent].indice] = parent;
+
+								k = parent;
+								parent = (k - 1) / 2;
+							}
+						}
+					}
+				}
+			}
+		}else {
+			flagInf = 1;
+		}
 
 	}
 
