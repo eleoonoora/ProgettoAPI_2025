@@ -87,7 +87,7 @@ int32_t main() {
 	char command[64];
 	int32_t res = 0, row = 0, col = 0;
 	Tile **map = NULL;
-	Cache cache = {0, 0, 0};
+	Cache cache = {0};
 
 	int32_t comandi = 0;
 
@@ -347,7 +347,7 @@ int32_t main() {
 						}
 					}
 
-					if (posizione_destinazione == 1 && flag_idd_found == 1) {
+					if (flag_idp_found == 1 && flag_idd_found == 1) {
 						printf("%d\n", cache.tiles[tileStart].destinazioni[posizione_destinazione].distanza);
 					} else {
 						risultato = DijkstraShortestPath(map, rowp * col + colp, rowd * col + cold, col, row);
