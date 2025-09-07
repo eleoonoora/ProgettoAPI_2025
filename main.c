@@ -5,7 +5,7 @@
 
 #define INF 2000000000
 #define MAX_CACHE 16
-#define MAX_TILE 32
+#define MAX_TILE 64
 
 /*
  *	Struttura delle tile: per ogni esagono della mappa vengono salvate le cordinate delle x, delle y, il costo di
@@ -369,10 +369,10 @@ int32_t main() {
 								new->size = 0;
 
 								//Singola destinazione
-								Destinazioni *new2 = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
+								Destinazioni *new2 = &cache.tiles[cache.size].destinazioni[cache.tiles[tileStart].size];
 								new2->idd = idd;
 								new2->distanza = risultato;
-								cache.tiles[tileStart].size++;
+								cache.tiles[cache.size].size++;
 
 								cache.size++;
 							}
