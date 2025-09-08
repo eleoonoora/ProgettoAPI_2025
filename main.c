@@ -280,99 +280,103 @@ int32_t main() {
 			int32_t colp, rowp, cold, rowd;
 			res = scanf("%d" "%d" "%d" "%d", &colp, &rowp, &cold, &rowd);
 
-			if ((colp < 0 || rowp < 0 || cold < 0 || rowd < 0 || colp >= col || rowp >= row || cold >= col || rowd >= row) && map == NULL) {
-				printf("-1\n");
-			} else {
-				if (map[rowp][colp].cost == 0) {
+			if (map != NULL) {
+				if (colp < 0 || rowp < 0 || cold < 0 || rowd < 0 || colp >= col || rowp >= row || cold >= col || rowd >= row) {
 					printf("-1\n");
-				} else if (colp == cold && rowp == rowd) {
-					printf("0\n");
 				} else {
-					int32_t risultato, idd, idp, flag_idp_found = 0, tileStart = 0, flag_idd_found = 0, posizione_destinazione = 0;
-					idp = rowp * col + colp;
-					idd = rowd * col + cold;
+					if (map[rowp][colp].cost == 0) {
+						printf("-1\n");
+					} else if (colp == cold && rowp == rowd) {
+						printf("0\n");
+					} else {
+						int32_t risultato, idd, idp, flag_idp_found = 0, tileStart = 0, flag_idd_found = 0, posizione_destinazione = 0;
+						idp = rowp * col + colp;
+						idd = rowd * col + cold;
 
-					//Se tra l'ultimo travel e il corrente è stato modificato qualcosa nella mappa, resetto la cache
-					if (flag_reset_cache == 1) {
-						//reset di tutta la cache per cambiamento costi
-						for (int i = 0; i < cache.size; i++) {
-							cache.tiles[i].size = 0;
-						}
-						cache.size = 0;
-						flag_reset_cache = 0;
-
-						risultato = DijkstraShortestPath(map, rowp * col + colp, rowd * col + cold, col, row);
-						printf("%d\n", risultato);
-
-						//Va inserita sia la tile, sia la destinazione della tile
-						TileCache *new = &cache.tiles[cache.size];
-						new->idp = idp;
-						new->size = 0;
-
-						//Singola destinazione
-						Destinazioni *new2 = &cache.tiles[cache.size].destinazioni[cache.tiles[cache.size].size];
-						new2->idd = idd;
-						new2->distanza = risultato;
-						cache.tiles[cache.size].size++;
-
-						cache.size++;
-
-					}else {
-						//Cerco se c'è la tile di partenza nella cache
-						while (flag_idp_found != 1 && tileStart < cache.size) {
-							if (cache.tiles[tileStart].idp == idp) {
-								flag_idp_found = 1;
-							} else {
-								tileStart++;
+						//Se tra l'ultimo travel e il corrente è stato modificato qualcosa nella mappa, resetto la cache
+						if (flag_reset_cache == 1) {
+							//reset di tutta la cache per cambiamento costi
+							for (int i = 0; i < cache.size; i++) {
+								cache.tiles[i].size = 0;
 							}
-						}
+							cache.size = 0;
+							flag_reset_cache = 0;
 
-						//Se c'è, cerco se c'è quella destinazione
-						if (flag_idp_found == 1) {
-							while (flag_idd_found != 1 && posizione_destinazione < cache.tiles[tileStart].size) {
-								if (cache.tiles[tileStart].destinazioni[posizione_destinazione].idd == idd) {
-									flag_idd_found = 1;
-								} else {
-									posizione_destinazione++;
-								}
-							}
-						}
-
-						if (flag_idp_found == 1 && flag_idd_found == 1) {
-							printf("%d\n", cache.tiles[tileStart].destinazioni[posizione_destinazione].distanza);
-						} else {
 							risultato = DijkstraShortestPath(map, rowp * col + colp, rowd * col + cold, col, row);
 							printf("%d\n", risultato);
 
-							//Se c'è la tile ma non la destinazione aggiungo solo quella
-							if (flag_idp_found == 1 && flag_idd_found == 0) {
-								if (cache.tiles[tileStart].size < MAX_CACHE) {
-									Destinazioni *new = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
-									new->idd = idd;
-									new->distanza = risultato;
-									cache.tiles[tileStart].size++;
+							//Va inserita sia la tile, sia la destinazione della tile
+							TileCache *new = &cache.tiles[cache.size];
+							new->idp = idp;
+							new->size = 0;
+
+							//Singola destinazione
+							Destinazioni *new2 = &cache.tiles[cache.size].destinazioni[cache.tiles[cache.size].size];
+							new2->idd = idd;
+							new2->distanza = risultato;
+							cache.tiles[cache.size].size++;
+
+							cache.size++;
+
+						}else {
+							//Cerco se c'è la tile di partenza nella cache
+							while (flag_idp_found != 1 && tileStart < cache.size) {
+								if (cache.tiles[tileStart].idp == idp) {
+									flag_idp_found = 1;
+								} else {
+									tileStart++;
 								}
+							}
+
+							//Se c'è, cerco se c'è quella destinazione
+							if (flag_idp_found == 1) {
+								while (flag_idd_found != 1 && posizione_destinazione < cache.tiles[tileStart].size) {
+									if (cache.tiles[tileStart].destinazioni[posizione_destinazione].idd == idd) {
+										flag_idd_found = 1;
+									} else {
+										posizione_destinazione++;
+									}
+								}
+							}
+
+							if (flag_idp_found == 1 && flag_idd_found == 1) {
+								printf("%d\n", cache.tiles[tileStart].destinazioni[posizione_destinazione].distanza);
 							} else {
-								//Altrimenti devo aggiungere entrambe
-								if (cache.size < MAX_TILE) {
-									TileCache *new = &cache.tiles[cache.size];
-									new->idp = idp;
-									new->size = 0;
+								risultato = DijkstraShortestPath(map, rowp * col + colp, rowd * col + cold, col, row);
+								printf("%d\n", risultato);
 
-									//Singola destinazione
-									Destinazioni *new2 = &cache.tiles[cache.size].destinazioni[cache.tiles[tileStart].size];
-									new2->idd = idd;
-									new2->distanza = risultato;
-									cache.tiles[cache.size].size++;
+								//Se c'è la tile ma non la destinazione aggiungo solo quella
+								if (flag_idp_found == 1 && flag_idd_found == 0) {
+									if (cache.tiles[tileStart].size < MAX_CACHE) {
+										Destinazioni *new = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
+										new->idd = idd;
+										new->distanza = risultato;
+										cache.tiles[tileStart].size++;
+									}
+								} else {
+									//Altrimenti devo aggiungere entrambe
+									if (cache.size < MAX_TILE) {
+										TileCache *new = &cache.tiles[cache.size];
+										new->idp = idp;
+										new->size = 0;
 
-									cache.size++;
+										//Singola destinazione
+										Destinazioni *new2 = &cache.tiles[cache.size].destinazioni[cache.tiles[tileStart].size];
+										new2->idd = idd;
+										new2->distanza = risultato;
+										cache.tiles[cache.size].size++;
+
+										cache.size++;
+									}
+
+
 								}
-
-
 							}
 						}
 					}
 				}
+			}else {
+				printf("-1\n");
 			}
 		}
 	}
