@@ -169,7 +169,7 @@ int32_t main() {
 							hColo = hColo + 1;
 						}
 					} else {
-						if (hColo == raggio && raggio & 1 != 0) {
+						if (hColo == raggio && (raggio % 2) != 0) {
 							hColo = hColo - 1;
 						} else if (hColo > 0) {
 							hColo = hColo - 2;
@@ -280,7 +280,7 @@ int32_t main() {
 			int32_t colp, rowp, cold, rowd;
 			res = scanf("%d" "%d" "%d" "%d", &colp, &rowp, &cold, &rowd);
 
-			if (colp < 0 || rowp < 0 || cold < 0 || rowd < 0 || colp >= col || rowp >= row || cold >= col || rowd >= row && map == NULL) {
+			if ((colp < 0 || rowp < 0 || cold < 0 || rowd < 0 || colp >= col || rowp >= row || cold >= col || rowd >= row) && map == NULL) {
 				printf("-1\n");
 			} else {
 				if (map[rowp][colp].cost == 0) {
