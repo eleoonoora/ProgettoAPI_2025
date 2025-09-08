@@ -4,8 +4,12 @@
 #include <math.h>
 
 #define INF 2000000000
-#define MAX_CACHE 12
+#define MAX_CACHE 8
 #define MAX_TILE 100
+
+/*Funzionamento della cache: la cache ha grandezze fisse, ovvero salva le prime MAX_TILE di tiles diverse e per ogni tile
+* salva al massimo MAX_CACHE destinazioni diverse. Questi valore sono stati scelti arbitrariamente.
+ */
 
 //================= CACHE =================//
 typedef struct destinazione {
@@ -25,6 +29,11 @@ typedef struct cache {
 } Cache;
 //=========================================//
 
+/* Struttura per la mappa esagonale: la mappa della specifica è stata salvata su una matrice row * col. La gestione
+ * non è immediatamente logica per via degli sfasamenti, per ogni tile vengono salvate le coordinate cubiche perchè
+ * permettono un calcolo delle distanze semplice. Ogni tile contiene un array dinamico delle air route, fatto dinamicamente.
+ */
+
 //================= TILE =================//
 typedef struct airRoute {
 	int32_t xDest;
@@ -43,6 +52,8 @@ typedef struct tile {
 } Tile;
 //========================================//
 
+// Struttura dello heap per Dijkstra: heap molto semplice e statico visto che la funzione viene chiamata molte volte.
+
 //================= HEAP =================//
 typedef struct node {
 	int32_t distanza;
@@ -53,22 +64,22 @@ typedef struct node {
 static inline int32_t AirRouteCost(Tile **map, int32_t col, int32_t row);
 static inline int32_t Incremento(Tile **map, int32_t col, int32_t row, int32_t v, int32_t raggio, int32_t distanza);
 static inline int32_t DistanzaEsagoni(Tile **map, int32_t cola, int32_t rowa, int32_t colb, int32_t rowb);
+static inline int32_t DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32_t row);
 
 // static Node ExtractMin (Queue *Q);
-//static void MinHeapify (Queue *Q, int32_t i);
+// static void MinHeapify (Queue *Q, int32_t i);
 // int32_t Left(int32_t i);
 // int32_t Right(int32_t i);
 // void Swap (Queue *Q, int32_t i, int32_t j);
-//static void DecreaseKey (Queue *Q, int32_t i, int32_t key);
+// static void DecreaseKey (Queue *Q, int32_t i, int32_t key);
 // int32_t Parent(int32_t i);
 // static void HeapInsert (Queue *Q, int32_t id, int32_t key);
-static inline int32_t DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, int32_t col, int32_t row);
 
 //! le matrici sono map[row][col]
 
 int32_t main() {
 	char command[64];
-	int32_t res = 0, row = 0, col = 0;
+	int32_t res = 0, row = 0, col = 0, flag_reset_cache = 0;
 	Tile **map = NULL;
 	Cache cache = {0};
 
@@ -76,11 +87,7 @@ int32_t main() {
 		if (strcmp(command, "init") == 0) {
 			//se la mappa è già presente la si libera
 			if (map != NULL) {
-				for (int i = 0; i < cache.size; i++) {
-					cache.tiles[i].size = 0;
-				}
-				cache.size = 0;
-
+				flag_reset_cache = 1;
 				for (int32_t i = 0; i < row; i++) {
 					for (int32_t j = 0; j < col; j++) {
 						AirRoute *head = map[i][j].array;
@@ -97,7 +104,7 @@ int32_t main() {
 				map = NULL;
 			}
 
-			//poi si procede nella lettura dei valori e alla crazione di una nuova mappa
+			//poi si procede nella lettura dei valori e alla creazione di una nuova mappa
 			res = scanf("%d", &col);
 			res = scanf("%d", &row);
 
@@ -121,8 +128,10 @@ int32_t main() {
 		} else if (strcmp(command, "change_cost") == 0) {
 			int32_t colStart, rowStart, v, raggio, hColo, val;
 			res = scanf("%d" "%d" "%d" "%d", &colStart, &rowStart, &v, &raggio);
-			if (rowStart < row && rowStart >= 0 && colStart < col && colStart >= 0 && raggio > 1 && -10 <= v && v <= 10) {
+
+			if (rowStart < row && rowStart >= 0 && colStart < col && colStart >= 0 && raggio > 1 && -10 <= v && v <= 10 && map != NULL) {
 				hColo = 1;
+
 				//loop per le colonne da modificare (asse x)
 				for (int32_t i = -raggio + 1; i <= raggio - 1; i++) {
 					//loop per le righe da modificare (asse y)
@@ -139,16 +148,14 @@ int32_t main() {
 									}
 								} else {
 									if (val <= 0) {
-										// se è negativo lo poni a zero
-										map[rowStart + j][colStart + i].cost = 0;
-										for (int32_t k = 0; k < map[rowStart + j][colStart + i].numAirRoute; k++) {
-											map[rowStart + j][colStart + i].array[k].costAirRoute = 0;
-										}
-									} else {
-										map[rowStart + j][colStart + i].cost = 100;
-										for (int32_t k = 0; k < map[rowStart + j][colStart + i].numAirRoute; k++) {
-											map[rowStart + j][colStart + i].array[k].costAirRoute = 100;
-										}
+										val = 0;
+									}else {
+										val = 100;
+									}
+
+									map[rowStart + j][colStart + i].cost = val;
+									for (int32_t k = 0; k < map[rowStart + j][colStart + i].numAirRoute; k++) {
+										map[rowStart + j][colStart + i].array[k].costAirRoute = val;
 									}
 								}
 							}
@@ -162,7 +169,7 @@ int32_t main() {
 							hColo = hColo + 1;
 						}
 					} else {
-						if (hColo == raggio && raggio % 2 != 0) {
+						if (hColo == raggio && raggio & 1 != 0) {
 							hColo = hColo - 1;
 						} else if (hColo > 0) {
 							hColo = hColo - 2;
@@ -170,15 +177,10 @@ int32_t main() {
 					}
 				}
 
-				//reset di tutta la cache per cambiamento costi
-				for (int i = 0; i < cache.size; i++) {
-					cache.tiles[i].size = 0;
-				}
-				cache.size = 0;
-
+				flag_reset_cache = 1;
 				printf("OK\n");
-			} else if (rowStart < row && rowStart >= 0 && colStart < col && colStart >= 0 && raggio == 1 && -10 <= v &&
-			           v <= 10) {
+
+			} else if (rowStart < row && rowStart >= 0 && colStart < col && colStart >= 0 && raggio == 1 && -10 <= v && v <= 10  && map != NULL) {
 				val = map[rowStart][colStart].cost + v;
 				if (val > 0 && val <= 100) {
 					map[rowStart][colStart].cost = val;
@@ -187,26 +189,21 @@ int32_t main() {
 					}
 				} else {
 					if (val <= 0) {
-						// se è negativo lo poni a zero
-						map[rowStart][colStart].cost = 0;
-						for (int32_t k = 0; k < map[rowStart][colStart].numAirRoute; k++) {
-							map[rowStart][colStart].array[k].costAirRoute = 0;
-						}
-					} else {
-						map[rowStart][colStart].cost = 100;
-						for (int32_t k = 0; k < map[rowStart][colStart].numAirRoute; k++) {
-							map[rowStart][colStart].array[k].costAirRoute = 100;
-						}
+						val = 0;
+					}else {
+						val = 100;
 					}
+
+					map[rowStart][colStart].cost = val;
+					for (int32_t k = 0; k < map[rowStart][colStart].numAirRoute; k++) {
+						map[rowStart][colStart].array[k].costAirRoute = val;
+					}
+
 				}
 
-				//reset di tutta la cache per cambiamento costi
-				for (int i = 0; i < cache.size; i++) {
-					cache.tiles[i].size = 0;
-				}
-				cache.size = 0;
-
+				flag_reset_cache =1;
 				printf("OK\n");
+
 			} else {
 				printf("KO\n");
 			}
@@ -215,7 +212,7 @@ int32_t main() {
 			int32_t col_start = 0, row_start = 0, col_end = 0, row_end = 0;
 			res = scanf("%d" "%d" "%d" "%d", &col_start, &row_start, &col_end, &row_end);
 
-			if (col_start < col && col_end < col && row_start < row && row_end < row) {
+			if (col_start < col && col_end < col && row_start < row && row_end < row && map != NULL) {
 				AirRoute *airRouteHead = map[row_start][col_start].array;
 				AirRoute *airRoutePrev = NULL;
 
@@ -258,11 +255,7 @@ int32_t main() {
 						}
 					}
 
-					//reset di tutta la cache per cambiamento costi
-					for (int i = 0; i < cache.size; i++) {
-						cache.tiles[i].size = 0;
-					}
-					cache.size = 0;
+					flag_reset_cache = 1;
 				}
 				//altrimenti lo aggiunge solo se ce ne sono meno di 5
 				else if (map[row_start][col_start].numAirRoute < 5) {
@@ -274,13 +267,9 @@ int32_t main() {
 					airRouteNew->next = map[row_start][col_start].array;
 					map[row_start][col_start].array = airRouteNew;
 
-					//reset di tutta la cache per cambiamento costi
-					for (int i = 0; i < cache.size; i++) {
-						cache.tiles[i].size = 0;
-					}
-					cache.size = 0;
-
+					flag_reset_cache = 1;
 					printf("OK\n");
+
 				} else {
 					printf("KO\n");
 				}
@@ -291,8 +280,7 @@ int32_t main() {
 			int32_t colp, rowp, cold, rowd;
 			res = scanf("%d" "%d" "%d" "%d", &colp, &rowp, &cold, &rowd);
 
-			if (colp < 0 || rowp < 0 || cold < 0 || rowd < 0 || colp >= col || rowp >= row || cold >= col || rowd >=
-			    row) {
+			if (colp < 0 || rowp < 0 || cold < 0 || rowd < 0 || colp >= col || rowp >= row || cold >= col || rowd >= row && map == NULL) {
 				printf("-1\n");
 			} else {
 				if (map[rowp][colp].cost == 0) {
@@ -304,57 +292,84 @@ int32_t main() {
 					idp = rowp * col + colp;
 					idd = rowd * col + cold;
 
-					//Cerco se c'è la tile di partenza nella cache
-					while (flag_idp_found != 1 && tileStart < cache.size) {
-						if (cache.tiles[tileStart].idp == idp) {
-							flag_idp_found = 1;
-						} else {
-							tileStart++;
+					//Se tra l'ultimo travel e il corrente è stato modificato qualcosa nella mappa, resetto la cache
+					if (flag_reset_cache == 1) {
+						//reset di tutta la cache per cambiamento costi
+						for (int i = 0; i < cache.size; i++) {
+							cache.tiles[i].size = 0;
 						}
-					}
+						cache.size = 0;
+						flag_reset_cache = 0;
 
-					//Se c'è, cerco se c'è quella destinazione
-					if (flag_idp_found == 1) {
-						while (flag_idd_found != 1 && posizione_destinazione < cache.tiles[tileStart].size) {
-							if (cache.tiles[tileStart].destinazioni[posizione_destinazione].idd == idd) {
-								flag_idd_found = 1;
-							} else {
-								posizione_destinazione++;
-							}
-						}
-					}
-
-					if (flag_idp_found == 1 && flag_idd_found == 1) {
-						printf("%d\n", cache.tiles[tileStart].destinazioni[posizione_destinazione].distanza);
-					} else {
 						risultato = DijkstraShortestPath(map, rowp * col + colp, rowd * col + cold, col, row);
 						printf("%d\n", risultato);
 
-						//Se c'è la tile ma non la destinazione aggiungo solo quella
-						if (flag_idp_found == 1 && flag_idd_found == 0) {
-							if (cache.tiles[tileStart].size < MAX_CACHE) {
-								Destinazioni *new = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
-								new->idd = idd;
-								new->distanza = risultato;
-								cache.tiles[tileStart].size++;
+						//Va inserita sia la tile, sia la destinazione della tile
+						TileCache *new = &cache.tiles[cache.size];
+						new->idp = idp;
+						new->size = 0;
+
+						//Singola destinazione
+						Destinazioni *new2 = &cache.tiles[cache.size].destinazioni[cache.tiles[cache.size].size];
+						new2->idd = idd;
+						new2->distanza = risultato;
+						cache.tiles[cache.size].size++;
+
+						cache.size++;
+
+					}else {
+						//Cerco se c'è la tile di partenza nella cache
+						while (flag_idp_found != 1 && tileStart < cache.size) {
+							if (cache.tiles[tileStart].idp == idp) {
+								flag_idp_found = 1;
+							} else {
+								tileStart++;
 							}
+						}
+
+						//Se c'è, cerco se c'è quella destinazione
+						if (flag_idp_found == 1) {
+							while (flag_idd_found != 1 && posizione_destinazione < cache.tiles[tileStart].size) {
+								if (cache.tiles[tileStart].destinazioni[posizione_destinazione].idd == idd) {
+									flag_idd_found = 1;
+								} else {
+									posizione_destinazione++;
+								}
+							}
+						}
+
+						if (flag_idp_found == 1 && flag_idd_found == 1) {
+							printf("%d\n", cache.tiles[tileStart].destinazioni[posizione_destinazione].distanza);
 						} else {
-							//Altrimenti devo aggiungere entrambe
-							if (cache.size < MAX_TILE) {
-								TileCache *new = &cache.tiles[cache.size];
-								new->idp = idp;
-								new->size = 0;
+							risultato = DijkstraShortestPath(map, rowp * col + colp, rowd * col + cold, col, row);
+							printf("%d\n", risultato);
 
-								//Singola destinazione
-								Destinazioni *new2 = &cache.tiles[cache.size].destinazioni[cache.tiles[tileStart].size];
-								new2->idd = idd;
-								new2->distanza = risultato;
-								cache.tiles[cache.size].size++;
+							//Se c'è la tile ma non la destinazione aggiungo solo quella
+							if (flag_idp_found == 1 && flag_idd_found == 0) {
+								if (cache.tiles[tileStart].size < MAX_CACHE) {
+									Destinazioni *new = &cache.tiles[tileStart].destinazioni[cache.tiles[tileStart].size];
+									new->idd = idd;
+									new->distanza = risultato;
+									cache.tiles[tileStart].size++;
+								}
+							} else {
+								//Altrimenti devo aggiungere entrambe
+								if (cache.size < MAX_TILE) {
+									TileCache *new = &cache.tiles[cache.size];
+									new->idp = idp;
+									new->size = 0;
 
-								cache.size++;
+									//Singola destinazione
+									Destinazioni *new2 = &cache.tiles[cache.size].destinazioni[cache.tiles[tileStart].size];
+									new2->idd = idd;
+									new2->distanza = risultato;
+									cache.tiles[cache.size].size++;
+
+									cache.size++;
+								}
+
+
 							}
-
-
 						}
 					}
 				}
@@ -797,16 +812,13 @@ static inline int32_t DijkstraShortestPath(Tile **G, int32_t idp, int32_t idd, i
 				//air route
 				for (int32_t i = 0; i < G[y][x].numAirRoute; i++) {
 					idFinale = G[y][x].array[i].yDest * col + G[y][x].array[i].xDest;
-					if (idFinale >= 0 && idFinale < row * col && distance[
-						    G[y][x].array[i].yDest * col + G[y][x].array[i].xDest] > u.distanza + G[y][x].array[i].
-					    costAirRoute && posizione[idFinale] != -1) {
-						distance[G[y][x].array[i].yDest * col + G[y][x].array[i].xDest] =
-								u.distanza + G[y][x].array[i].costAirRoute;
+					if (idFinale >= 0 && idFinale < row * col && distance[idFinale] > u.distanza + G[y][x].array[i].costAirRoute && posizione[idFinale] != -1) {
+						distance[idFinale] = u.distanza + G[y][x].array[i].costAirRoute;
 
 						//DecreaseKey
 						int32_t k = posizione[idFinale];
-						if (distance[G[y][x].array[i].yDest * col + G[y][x].array[i].xDest] < minHeap[k].distanza) {
-							minHeap[k].distanza = distance[G[y][x].array[i].yDest * col + G[y][x].array[i].xDest];
+						if (distance[idFinale] < minHeap[k].distanza) {
+							minHeap[k].distanza = distance[idFinale];
 							int32_t parent = (k - 1) / 2;
 
 							while (k > 0 && minHeap[parent].distanza > minHeap[k].distanza) {
