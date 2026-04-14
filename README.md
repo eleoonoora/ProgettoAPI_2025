@@ -14,8 +14,8 @@ La mappa, che simula la Terra, è suddivisa in zone esagonali con diversi costi 
 * **change_cost ⟨_x_⟩ ⟨_y_⟩ ⟨_v_⟩ ⟨_raggio_⟩:** cambiare il costo degli esagoni, in modo radiale, a partire da una posizione data e fornendo un raggio;
 * **toggle_air_route ⟨_x1_⟩ ⟨_y1_⟩ ⟨_x2_⟩ ⟨_y2_⟩:** creare rotte aeree per raggiungere determinati esagoni. Se usato per una rotta già esistente, la rimuove;
 * **travel_cost ⟨_xp_⟩ ⟨_yp_⟩ ⟨_xd_⟩ ⟨_yd_⟩:** richiedere il costo da un punto di partenza a uno di arrivo.
-<br>
-Per ulteriori informazioni [qui](https://github.com/eleoonoora/ProgettoAPI_2025/blob/master/Documents/Specifica_API_2025.pdf) è possibile trovare l'intera specifica.
+
+<br>Per ulteriori informazioni [qui](https://github.com/eleoonoora/ProgettoAPI_2025/blob/master/Documents/Specifica_API_2025.pdf) è possibile trovare l'intera specifica.
 
 ## Scelte implementative
 
