@@ -23,7 +23,7 @@ La mappa, che simula la Terra, è suddivisa in zone esagonali con diversi costi 
 Per gestire il movimento, il codice esegue una conversione tra Offset Coordinates e Axial/Cube Coordinates: viene estratta la componente x e y per calcolare la coordinata assiale xp e zp. <br>
 
       xp = x - (y - (y \& 1)) / 2 <br>
-      zp = y <br>
+      zp = y
 
 Dopo aver calcolato la coordinata del vicino in formato assiale, il codice la riconverte in un indice di matrice.
 
